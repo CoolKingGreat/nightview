@@ -62,8 +62,8 @@ export function Welcome() {
 
             <p className="mt-5 text-[14px] leading-[1.55] text-ink/72">
               An interactive globe of how the night sky has changed across Earth since 2012.
-              Roughly 2,900 cities, colored by their VIIRS-measured trend rate — red where the
-              night is vanishing fastest, blue where it&apos;s recovering.
+              Roughly 2,900 cities, colored by their VIIRS-measured trend rate. Red marks where the
+              night is vanishing fastest, blue marks where it&apos;s recovering.
             </p>
 
             <ul className="mt-5 space-y-2 text-[12.5px] leading-[1.4] text-ink/65">
