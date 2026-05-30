@@ -1,0 +1,38 @@
+# Fly.io config for the Nightview backend.
+# `fly launch --no-deploy` will read this; `fly deploy` builds the Dockerfile.
+# Override `app` below with the name you pick during `fly launch`.
+
+app = "nightview-api"
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  ALLOWED_ORIGINS = "https://nightview.aryanvalsa.me"
+  DAILY_USD_CAP = "2.0"
+  RATE_LIMIT_PER_IP = "20"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 50
+    hard_limit = 100
+
+  [[http_service.checks]]
+    method = "GET"
+    path = "/api/health"
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "10s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

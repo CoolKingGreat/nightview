@@ -1,0 +1,51 @@
+# planning / personal — NEVER commit to the public repo
+AGENTS.md
+BUILD_LOG.md
+CONTEXT.md
+SPEC.md
+PORTFOLIO_COPY.md
+Resume.pdf
+.claude/
+
+# env
+.env
+.env.local
+*.env
+
+# python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+.eggs/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# node
+node_modules/
+dist/
+build/
+.vite/
+*.tsbuildinfo
+.eslintcache
+
+# data — ship the curated seed CSV + the built parquet (used by the deploy image),
+# ignore raw VIIRS dumps and per-pixel intermediates
+data/raw/*
+!data/raw/cities_seed.csv
+data/processed/*
+!data/processed/trends.parquet
+!data/processed/.gitkeep
+
+# editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# secrets / credentials
+gee-service-account*.json
+*.pem

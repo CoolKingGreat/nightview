@@ -1,0 +1,31 @@
+**/.venv
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.ruff_cache
+**/.mypy_cache
+
+frontend/
+node_modules/
+.git/
+.github/
+.claude/
+.vscode/
+.idea/
+
+# personal / planning — never ship
+AGENTS.md
+BUILD_LOG.md
+CONTEXT.md
+SPEC.md
+PORTFOLIO_COPY.md
+Resume.pdf
+
+# env (secrets come from Fly, not the image)
+.env
+.env.*
+!.env.example
+
+# only ship the curated CSV + the prebuilt parquet — Dockerfile copies them explicitly
+data/raw/
+data/processed/

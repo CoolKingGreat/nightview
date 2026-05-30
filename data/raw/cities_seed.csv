@@ -1,0 +1,108 @@
+name,country,lat,lon,population_m,baseline_radiance_nw,trend_pct_per_yr,note
+New York,US,40.7128,-74.006,8.3,72.0,1.4,LED retrofit underway; slight net growth
+Los Angeles,US,34.0522,-118.2437,4.0,68.0,1.6,LED 2009-2013 cut some glow; sprawl re-adds
+Chicago,US,41.8781,-87.6298,2.7,58.0,1.1,LED conversion; near-flat trend
+Houston,US,29.7604,-95.3698,2.3,52.0,3.9,Documented sprawl; petrochemical lighting
+Phoenix,US,33.4484,-112.074,1.6,48.0,2.7,Suburban expansion; weak ordinances
+Dallas,US,32.7767,-96.797,1.3,50.0,2.9,Sprawl
+Miami,US,25.7617,-80.1918,0.5,54.0,2.4,Coastal sprawl
+Atlanta,US,33.749,-84.388,0.5,46.0,2.6,Sprawl
+Las Vegas,US,36.1699,-115.1398,0.7,84.0,4.1,Famously bright; ongoing growth
+Seattle,US,47.6062,-122.3321,0.75,40.0,1.2,
+San Francisco,US,37.7749,-122.4194,0.87,52.0,0.5,Leader in LED retrofits; near-flat trend
+San Diego,US,32.7157,-117.1611,1.4,46.0,1.4,
+Portland,US,45.5152,-122.6784,0.65,38.0,1.0,IDA dark-sky advocacy
+Minneapolis,US,44.9778,-93.265,0.43,38.0,1.3,
+Philadelphia,US,39.9526,-75.1652,1.6,50.0,1.2,
+Boston,US,42.3601,-71.0589,0.69,52.0,1.0,
+Denver,US,39.7392,-104.9903,0.71,42.0,2.1,
+Saint Louis,US,38.627,-90.1994,0.3,38.0,1.8,Midwest US, modest growth
+Detroit,US,42.3314,-83.0458,0.63,30.0,-0.6,Post-industrial decline
+Tucson,US,32.2226,-110.9747,0.55,18.0,-0.9,Strict dark-sky ordinances since 1970s
+Toronto,CA,43.6532,-79.3832,2.7,50.0,1.5,
+Montreal,CA,45.5017,-73.5673,1.78,42.0,1.0,
+Vancouver,CA,49.2827,-123.1207,0.7,38.0,0.8,
+Mexico City,MX,19.4326,-99.1332,9.0,60.0,3.1,
+Guadalajara,MX,20.6597,-103.3496,1.46,46.0,3.4,
+Havana,CU,23.1136,-82.3666,2.1,22.0,1.6,
+London,GB,51.5072,-0.1276,9.0,48.0,0.6,Aggressive LED program offsets growth
+Paris,FR,48.8566,2.3522,2.16,46.0,0.9,
+Berlin,DE,52.52,13.405,3.7,38.0,0.4,Strong dark-sky advocacy
+Madrid,ES,40.4168,-3.7038,3.3,52.0,1.8,
+Rome,IT,41.9028,12.4964,2.87,44.0,1.4,
+Amsterdam,NL,52.3676,4.9041,0.9,40.0,1.1,
+Vienna,AT,48.2082,16.3738,1.95,36.0,0.7,
+Stockholm,SE,59.3293,18.0686,0.97,28.0,0.5,
+Copenhagen,DK,55.6761,12.5683,0.66,32.0,0.6,
+Oslo,NO,59.9139,10.7522,0.7,26.0,0.3,
+Helsinki,FI,60.1699,24.9384,0.66,24.0,0.4,
+Dublin,IE,53.3498,-6.2603,0.55,34.0,1.0,
+Warsaw,PL,52.2297,21.0122,1.79,38.0,2.3,Rapid post-2010 growth
+Prague,CZ,50.0755,14.4378,1.31,32.0,1.6,
+Budapest,HU,47.4979,19.0402,1.7,30.0,1.4,
+Moscow,RU,55.7558,37.6173,12.5,60.0,2.0,
+Saint Petersburg,RU,59.9343,30.3351,5.4,46.0,1.8,
+Istanbul,TR,41.0082,28.9784,15.5,58.0,3.2,Rapid metropolitan growth
+Reykjavik,IS,64.1466,-21.9426,0.13,12.0,-0.4,Small base; partly LED reform
+Athens,GR,37.9838,23.7275,0.66,40.0,1.8,
+Cairo,EG,30.0444,31.2357,9.5,46.0,4.1,Documented strong brightening
+Casablanca,MA,33.5731,-7.5898,3.4,32.0,4.5,
+Tunis,TN,36.8065,10.1815,1.06,28.0,3.0,
+Nairobi,KE,-1.2921,36.8219,4.4,18.0,6.2,Documented rapid East-Africa brightening
+Johannesburg,ZA,-26.2041,28.0473,5.6,40.0,2.8,
+Lagos,NG,6.5244,3.3792,21.0,38.0,8.7,Documented; one of fastest-brightening globally
+Kinshasa,CD,-4.4419,15.2663,15.0,8.0,7.5,
+Addis Ababa,ET,9.03,38.7423,5.0,12.0,6.8,
+Accra,GH,5.6037,-0.187,2.4,18.0,5.9,
+Dakar,SN,14.7167,-17.4677,1.15,16.0,5.4,
+Algiers,DZ,36.7538,3.0588,3.0,30.0,3.6,
+Riyadh,SA,24.7136,46.6753,7.0,52.0,9.1,Documented petrostate boom
+Dubai,AE,25.2048,55.2708,3.4,72.0,5.8,
+Doha,QA,25.2854,51.531,0.65,82.0,7.2,
+Tehran,IR,35.6892,51.389,9.0,50.0,3.4,
+Baghdad,IQ,33.3152,44.3661,7.1,32.0,2.9,
+Damascus,SY,33.5138,36.2765,2.5,28.0,-1.8,Conflict-driven darkening; documented
+Aleppo,SY,36.2021,37.1343,1.8,24.0,-3.4,Conflict-driven darkening
+Mumbai,IN,19.076,72.8777,21.7,52.0,7.4,Documented; rapid Indian urbanization
+Delhi,IN,28.6139,77.209,32.1,54.0,7.8,
+Kolkata,IN,22.5726,88.3639,15.0,46.0,6.8,
+Chennai,IN,13.0827,80.2707,11.5,42.0,6.5,
+Bangalore,IN,12.9716,77.5946,13.6,44.0,7.1,
+Hyderabad,IN,17.385,78.4867,10.5,42.0,7.0,
+Karachi,PK,24.8607,67.0011,16.0,44.0,6.4,
+Dhaka,BD,23.8103,90.4125,22.5,42.0,7.6,
+Kathmandu,NP,27.7172,85.324,1.4,22.0,5.2,
+Colombo,LK,6.9271,79.8612,0.75,30.0,3.8,
+Bangkok,TH,13.7563,100.5018,10.5,52.0,3.1,
+Singapore,SG,1.3521,103.8198,5.9,76.0,2.4,
+Kuala Lumpur,MY,3.139,101.6869,8.3,54.0,3.6,
+Jakarta,ID,-6.2088,106.8456,11.0,46.0,4.7,
+Manila,PH,14.5995,120.9842,14.4,48.0,5.6,Documented
+Ho Chi Minh City,VN,10.8231,106.6297,9.0,42.0,5.8,
+Hanoi,VN,21.0285,105.8542,8.4,38.0,5.4,
+Beijing,CN,39.9042,116.4074,21.5,58.0,3.9,
+Shanghai,CN,31.2304,121.4737,28.5,64.0,3.6,
+Guangzhou,CN,23.1291,113.2644,14.0,56.0,4.2,
+Shenzhen,CN,22.5431,114.0579,17.5,62.0,5.1,
+Chongqing,CN,29.5630,106.5516,16.5,42.0,5.6,
+Hong Kong,HK,22.3193,114.1694,7.5,82.0,1.8,
+Taipei,TW,25.033,121.5654,2.7,58.0,1.6,
+Tokyo,JP,35.6762,139.6503,37.0,68.0,0.8,LED rollout offsets growth
+Osaka,JP,34.6937,135.5023,18.9,58.0,0.7,
+Seoul,KR,37.5665,126.978,9.7,72.0,1.5,
+Sydney,AU,-33.8688,151.2093,5.3,46.0,1.2,
+Melbourne,AU,-37.8136,144.9631,5.0,42.0,1.4,
+Perth,AU,-31.9505,115.8605,2.0,38.0,1.6,
+Auckland,NZ,-36.8485,174.7633,1.6,32.0,1.3,
+Sao Paulo,BR,-23.5505,-46.6333,12.3,48.0,2.6,Documented Milky Way loss
+Rio de Janeiro,BR,-22.9068,-43.1729,6.7,44.0,2.4,
+Buenos Aires,AR,-34.6037,-58.3816,15.0,46.0,1.9,
+Santiago,CL,-33.4489,-70.6693,6.8,42.0,2.4,
+Lima,PE,-12.0464,-77.0428,11.0,40.0,3.1,
+Bogota,CO,4.711,-74.0721,7.7,38.0,2.8,
+Caracas,VE,10.4806,-66.9036,2.3,26.0,-1.4,Economic crisis; documented darkening
+Cherry Springs State Park,US,41.6573,-77.8252,0.0,1.4,-0.3,Bortle 2 dark-sky park; protected
+Mauna Kea Observatory,US,19.8207,-155.4681,0.0,0.9,0.2,Strict county lighting ordinance
+Atacama Desert,CL,-23.0,-69.0,0.0,0.6,0.4,World's darkest skies near observatories
+Aoraki / Mt Cook,NZ,-43.6,170.1,0.0,1.1,-0.2,Aoraki Dark Sky Reserve
+NamibRand Reserve,NA,-25.0,16.0,0.0,0.7,0.1,IDA Gold-Tier dark-sky reserve

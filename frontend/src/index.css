@@ -1,0 +1,124 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+body {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: 'cv02' 1, 'cv03' 1, 'cv04' 1, 'liga' 1, 'kern' 1;
+  background: #020308;
+  color: #f4f7fb;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Cesium chrome is hidden; we render our own composition over the canvas. */
+.cesium-widget-credits,
+.cesium-viewer-bottom,
+.cesium-viewer-toolbar,
+.cesium-viewer-fullscreenContainer,
+.cesium-viewer-animationContainer,
+.cesium-viewer-timelineContainer,
+.cesium-viewer-geocoderContainer,
+.cesium-viewer-navigationContainer,
+.cesium-credit-textContainer,
+.cesium-credit-logoContainer {
+  display: none !important;
+}
+
+.cesium-widget canvas {
+  outline: none;
+}
+
+::selection {
+  background: #ffd978;
+  color: #020308;
+}
+
+/* Film-grain overlay — adds atmospheric texture so the dark background never reads flat. */
+.grain::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.91 0 0 0 0 0.89 0 0 0 0 0.83 0 0 0 0.10 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  opacity: 0.24;
+  mix-blend-mode: overlay;
+  z-index: 60;
+}
+
+/* Vignette so the corners fall off softly into deeper midnight. */
+.vignette::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 50%, transparent 44%, rgba(0, 0, 0, 0.18) 67%, rgba(0, 0, 0, 0.82) 100%),
+    linear-gradient(90deg, transparent 68%, rgba(0, 0, 0, 0.55) 100%);
+  z-index: 25;
+}
+
+/* Tabular numerals everywhere observatory metadata appears. */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Faint star field behind the globe — tiny random pinpricks. SVG keeps this <1KB. */
+.globe-starfield {
+  background-color: #000000;
+  background-image:
+    radial-gradient(1px 1px at 17% 12%, rgba(255, 255, 255, 0.45) 50%, transparent 100%),
+    radial-gradient(1px 1px at 38% 76%, rgba(255, 255, 255, 0.35) 50%, transparent 100%),
+    radial-gradient(1px 1px at 82% 24%, rgba(255, 255, 255, 0.5) 50%, transparent 100%),
+    radial-gradient(1px 1px at 64% 92%, rgba(255, 255, 255, 0.3) 50%, transparent 100%),
+    radial-gradient(1px 1px at 9% 56%, rgba(255, 255, 255, 0.4) 50%, transparent 100%),
+    radial-gradient(1px 1px at 93% 67%, rgba(255, 255, 255, 0.32) 50%, transparent 100%),
+    radial-gradient(1px 1px at 26% 39%, rgba(255, 255, 255, 0.28) 50%, transparent 100%),
+    radial-gradient(1px 1px at 54% 18%, rgba(255, 255, 255, 0.42) 50%, transparent 100%),
+    radial-gradient(1px 1px at 73% 55%, rgba(255, 255, 255, 0.3) 50%, transparent 100%),
+    radial-gradient(1px 1px at 45% 47%, rgba(255, 255, 255, 0.38) 50%, transparent 100%),
+    radial-gradient(1px 1px at 7% 88%, rgba(255, 255, 255, 0.32) 50%, transparent 100%),
+    radial-gradient(1px 1px at 88% 8%, rgba(255, 255, 255, 0.34) 50%, transparent 100%),
+    radial-gradient(1px 1px at 31% 64%, rgba(255, 255, 255, 0.26) 50%, transparent 100%),
+    radial-gradient(1px 1px at 57% 81%, rgba(255, 255, 255, 0.38) 50%, transparent 100%),
+    radial-gradient(1px 1px at 78% 38%, rgba(255, 255, 255, 0.28) 50%, transparent 100%);
+  background-size: 100% 100%;
+}
+
+/* Atmospheric ring around the globe silhouette — gives the planet a halo without enabling Cesium's atmosphere. */
+.globe-atmosphere {
+  background:
+    radial-gradient(circle at 50% 50%, transparent 28%, rgba(255, 217, 120, 0.045) 30%, transparent 36%),
+    radial-gradient(circle at 50% 50%, transparent 36%, rgba(90, 122, 156, 0.05) 41%, transparent 60%);
+  mix-blend-mode: screen;
+  z-index: 20;
+}
+
+/* Refined scrollbar for the chat transcript. */
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(244, 247, 251, 0.08);
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(244, 247, 251, 0.18);
+}
