@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, motion, useDragControls } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
 import { ChatOrb } from './components/ChatOrb';
 import { CitySearch } from './components/CitySearch';
@@ -20,6 +20,17 @@ export default function App() {
   const [inspected, setInspected] = useState<City | null>(null);
   const [year, setYear] = useState(TIME_NOW);
   const [chatOpenMobile, setChatOpenMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches,
+  );
+  const dragControls = useDragControls();
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const onChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
 
   const handleGlobeAction = (action: GlobeAction) => {
     globeRef.current?.applyAction(action);
@@ -173,16 +184,27 @@ export default function App() {
       />
 
       {/* Panel container.
-          Mobile: fixed slide-up sheet, ~88% of viewport tall.
-          Desktop: static right column. */}
-      <div
-        className={`fixed inset-x-0 bottom-0 z-50 h-[60dvh] transform overflow-hidden rounded-t-[18px] border-t border-white/[0.08] bg-[#040610] shadow-[0_-20px_60px_-15px_rgba(0,0,0,0.7)] transition-transform duration-[450ms] ease-[cubic-bezier(0.16,1,0.3,1)] md:relative md:inset-auto md:z-auto md:h-full md:min-h-0 md:transform-none md:rounded-none md:border-0 md:bg-transparent md:shadow-none md:transition-none ${
-          sheetOpenMobile ? 'translate-y-0' : 'translate-y-full md:translate-y-0'
-        }`}
+          Mobile: draggable slide-up sheet (60dvh). Drag the top handle down to dismiss.
+          Desktop: static right column, no transform, no drag. */}
+      <motion.div
+        drag={isMobile ? 'y' : false}
+        dragListener={false}
+        dragControls={dragControls}
+        dragConstraints={{ top: 0, bottom: 0 }}
+        dragElastic={{ top: 0, bottom: 0.5 }}
+        onDragEnd={(_, info) => {
+          if (info.offset.y > 90 || info.velocity.y > 500) handleCloseMobileSheet();
+        }}
+        animate={{ y: isMobile && !sheetOpenMobile ? '100%' : 0 }}
+        transition={{ type: 'spring', stiffness: 320, damping: 36, mass: 0.9 }}
+        className="fixed inset-x-0 bottom-0 z-50 h-[60dvh] overflow-hidden rounded-t-[18px] border-t border-white/[0.08] bg-[#040610] shadow-[0_-20px_60px_-15px_rgba(0,0,0,0.7)] md:relative md:inset-auto md:z-auto md:h-full md:min-h-0 md:rounded-none md:border-0 md:bg-transparent md:shadow-none"
       >
-        {/* Mobile-only sheet handle and close button */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-[60] flex items-center justify-center pt-2.5 md:hidden">
-          <div className="h-1 w-10 rounded-full bg-white/20" />
+        {/* Drag affordance — 32px touch zone with the visible pill centered. Mobile only. */}
+        <div
+          onPointerDown={(e) => isMobile && dragControls.start(e)}
+          className="absolute inset-x-0 top-0 z-[60] flex h-8 touch-none cursor-grab items-center justify-center active:cursor-grabbing md:hidden"
+        >
+          <div className="h-1 w-10 rounded-full bg-white/25" />
         </div>
         <button
           type="button"
@@ -207,7 +229,7 @@ export default function App() {
             )}
           </AnimatePresence>
         </div>
-      </div>
+      </motion.div>
 
       <Welcome />
     </main>
