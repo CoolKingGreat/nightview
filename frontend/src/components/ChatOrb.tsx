@@ -36,7 +36,7 @@ export function ChatOrb({ onGlobeAction, onActive }: Props) {
   const idRef = useRef(0);
 
   useEffect(() => {
-    if (transcriptRef.current) {
+    if (transcriptRef.current && messages.length > 0) {
       transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight;
     }
   }, [messages, toolStatus]);

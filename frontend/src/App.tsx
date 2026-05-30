@@ -161,12 +161,13 @@ export default function App() {
         </AnimatePresence>
       </section>
 
-      {/* Mobile sheet backdrop — tap to close */}
+      {/* Mobile sheet backdrop — transparent click-catcher so the globe stays visible above the sheet.
+          Sits only above the sheet (h-40dvh) so it doesn't block taps on the visible globe-area HUD. */}
       <button
         type="button"
         aria-label="close panel"
         onClick={handleCloseMobileSheet}
-        className={`fixed inset-0 z-40 bg-black/45 backdrop-blur-[2px] transition-opacity duration-300 md:hidden ${
+        className={`fixed inset-x-0 top-0 z-40 h-[40dvh] bg-transparent transition-opacity duration-300 md:hidden ${
           sheetOpenMobile ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
         }`}
       />
@@ -175,7 +176,7 @@ export default function App() {
           Mobile: fixed slide-up sheet, ~88% of viewport tall.
           Desktop: static right column. */}
       <div
-        className={`fixed inset-x-0 bottom-0 z-50 h-[88dvh] transform overflow-hidden rounded-t-[18px] border-t border-white/[0.08] bg-[#040610] shadow-[0_-20px_60px_-15px_rgba(0,0,0,0.7)] transition-transform duration-[450ms] ease-[cubic-bezier(0.16,1,0.3,1)] md:relative md:inset-auto md:z-auto md:h-full md:min-h-0 md:transform-none md:rounded-none md:border-0 md:bg-transparent md:shadow-none md:transition-none ${
+        className={`fixed inset-x-0 bottom-0 z-50 h-[60dvh] transform overflow-hidden rounded-t-[18px] border-t border-white/[0.08] bg-[#040610] shadow-[0_-20px_60px_-15px_rgba(0,0,0,0.7)] transition-transform duration-[450ms] ease-[cubic-bezier(0.16,1,0.3,1)] md:relative md:inset-auto md:z-auto md:h-full md:min-h-0 md:transform-none md:rounded-none md:border-0 md:bg-transparent md:shadow-none md:transition-none ${
           sheetOpenMobile ? 'translate-y-0' : 'translate-y-full md:translate-y-0'
         }`}
       >
