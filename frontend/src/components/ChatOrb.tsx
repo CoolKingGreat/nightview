@@ -57,8 +57,14 @@ export function ChatOrb({ onGlobeAction, onActive }: Props) {
     setToolStatus(null);
     onActive(true);
 
+    // Snapshot prior turns before this new message is appended.
+    // Drop the in-flight agent placeholder; only completed turns are sent.
+    const history = messages
+      .filter((m) => !m.streaming && m.text.trim())
+      .map((m) => ({ role: m.role, text: m.text }));
+
     try {
-      for await (const ev of streamChat(text) as AsyncIterable<AgentEvent<unknown>>) {
+      for await (const ev of streamChat(text, history) as AsyncIterable<AgentEvent<unknown>>) {
         if (ev.type === 'text') {
           setToolStatus(null);
           const delta = String(ev.data);

@@ -124,7 +124,8 @@ def trend_for_country(country: str) -> float:
 
 
 def build_record(name: str, country: str, lat: float, lon: float,
-                 population: int, baseline: float, trend: float) -> dict:
+                 population: int, baseline: float, trend: float,
+                 admin1_code: str = "") -> dict:
     history = monthly_series(baseline, trend, HISTORY_MONTHS)
     forecast = monthly_series(history[-1], trend, FORECAST_MONTHS)
     all_radiance = history + forecast
@@ -141,6 +142,7 @@ def build_record(name: str, country: str, lat: float, lon: float,
     return {
         "name": name,
         "country": country,
+        "admin1_code": admin1_code,
         "lat": lat,
         "lon": lon,
         "population_m": population / 1e6,
@@ -197,6 +199,7 @@ def main() -> None:
             continue
         lat = float(city.get("latitude", 0))
         lon = float(city.get("longitude", 0))
+        admin1 = str(city.get("admin1code", "")).strip()
 
         key = (name.lower(), country)
         override = curated_override.get(key)
@@ -208,7 +211,7 @@ def main() -> None:
             baseline = estimate_baseline_radiance(pop, country)
             trend = trend_for_country(country)
 
-        records.append(build_record(name, country, lat, lon, pop, baseline, trend))
+        records.append(build_record(name, country, lat, lon, pop, baseline, trend, admin1_code=admin1))
 
     # Append curated cities that didn't match anything in geonames (parks, observatories).
     if args.curated.exists():

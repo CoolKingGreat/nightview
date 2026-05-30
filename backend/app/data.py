@@ -36,6 +36,116 @@ NATURAL_NIGHT_RADIANCE = 0.171
 _HISTORY_START_YEAR = 2012
 _HISTORY_START_MONTH = 4
 
+# Sub-national subdivision aliases. Keyed by lowercased subdivision name,
+# value is (country_iso2, admin1_code_in_geonames). Covers US states + the
+# largest countries' major subdivisions. admin1 codes match what
+# scripts/ingest_global.py stores in the parquet's admin1_code column.
+#
+# US uses the 2-letter postal code; India/Brazil/CN/CA/AU use numeric codes.
+SUBDIVISION_ALIAS: dict[str, tuple[str, str]] = {
+    # India — 28 states + 8 UTs
+    "andhra pradesh": ("IN", "02"),
+    "arunachal pradesh": ("IN", "30"),
+    "assam": ("IN", "03"),
+    "bihar": ("IN", "34"),
+    "chandigarh": ("IN", "05"),
+    "chhattisgarh": ("IN", "37"),
+    "dadra and nagar haveli": ("IN", "39"),
+    "daman and diu": ("IN", "38"),
+    "delhi": ("IN", "07"),
+    "new delhi": ("IN", "07"),
+    "goa": ("IN", "33"),
+    "gujarat": ("IN", "09"),
+    "haryana": ("IN", "10"),
+    "himachal pradesh": ("IN", "11"),
+    "jammu and kashmir": ("IN", "12"),
+    "j&k": ("IN", "12"),
+    "jharkhand": ("IN", "36"),
+    "karnataka": ("IN", "19"),
+    "kerala": ("IN", "13"),
+    "ladakh": ("IN", "42"),
+    "lakshadweep": ("IN", "14"),
+    "madhya pradesh": ("IN", "35"),
+    "maharashtra": ("IN", "16"),
+    "manipur": ("IN", "17"),
+    "meghalaya": ("IN", "18"),
+    "mizoram": ("IN", "31"),
+    "nagaland": ("IN", "20"),
+    "odisha": ("IN", "21"),
+    "orissa": ("IN", "21"),
+    "puducherry": ("IN", "22"),
+    "pondicherry": ("IN", "22"),
+    "punjab": ("IN", "23"),
+    "rajasthan": ("IN", "24"),
+    "sikkim": ("IN", "29"),
+    "tamil nadu": ("IN", "25"),
+    "telangana": ("IN", "40"),
+    "tripura": ("IN", "26"),
+    "uttar pradesh": ("IN", "36"),
+    "uttarakhand": ("IN", "39"),
+    "uttaranchal": ("IN", "39"),
+    "west bengal": ("IN", "28"),
+    "andaman and nicobar": ("IN", "01"),
+    # US — 50 states + DC + PR. Postal codes.
+    "alabama": ("US", "AL"), "alaska": ("US", "AK"), "arizona": ("US", "AZ"),
+    "arkansas": ("US", "AR"), "california": ("US", "CA"), "colorado": ("US", "CO"),
+    "connecticut": ("US", "CT"), "delaware": ("US", "DE"), "florida": ("US", "FL"),
+    "georgia": ("US", "GA"), "hawaii": ("US", "HI"), "idaho": ("US", "ID"),
+    "illinois": ("US", "IL"), "indiana": ("US", "IN"), "iowa": ("US", "IA"),
+    "kansas": ("US", "KS"), "kentucky": ("US", "KY"), "louisiana": ("US", "LA"),
+    "maine": ("US", "ME"), "maryland": ("US", "MD"), "massachusetts": ("US", "MA"),
+    "michigan": ("US", "MI"), "minnesota": ("US", "MN"), "mississippi": ("US", "MS"),
+    "missouri": ("US", "MO"), "montana": ("US", "MT"), "nebraska": ("US", "NE"),
+    "nevada": ("US", "NV"), "new hampshire": ("US", "NH"), "new jersey": ("US", "NJ"),
+    "new mexico": ("US", "NM"), "new york": ("US", "NY"), "north carolina": ("US", "NC"),
+    "north dakota": ("US", "ND"), "ohio": ("US", "OH"), "oklahoma": ("US", "OK"),
+    "oregon": ("US", "OR"), "pennsylvania": ("US", "PA"), "rhode island": ("US", "RI"),
+    "south carolina": ("US", "SC"), "south dakota": ("US", "SD"), "tennessee": ("US", "TN"),
+    "texas": ("US", "TX"), "utah": ("US", "UT"), "vermont": ("US", "VT"),
+    "virginia": ("US", "VA"), "washington": ("US", "WA"), "west virginia": ("US", "WV"),
+    "wisconsin": ("US", "WI"), "wyoming": ("US", "WY"),
+    "district of columbia": ("US", "DC"), "puerto rico": ("US", "PR"),
+    # Canada — 10 provinces + 3 territories
+    "alberta": ("CA", "01"), "british columbia": ("CA", "02"),
+    "manitoba": ("CA", "03"), "new brunswick": ("CA", "04"),
+    "newfoundland and labrador": ("CA", "05"), "newfoundland": ("CA", "05"),
+    "nova scotia": ("CA", "07"), "ontario": ("CA", "08"),
+    "prince edward island": ("CA", "09"), "quebec": ("CA", "10"),
+    "saskatchewan": ("CA", "11"), "yukon": ("CA", "12"),
+    "northwest territories": ("CA", "13"), "nunavut": ("CA", "14"),
+    # Australia — states + territories
+    "new south wales": ("AU", "02"), "victoria": ("AU", "07"),
+    "queensland": ("AU", "04"), "south australia": ("AU", "05"),
+    "western australia": ("AU", "08"), "tasmania": ("AU", "06"),
+    "northern territory": ("AU", "03"),
+    "australian capital territory": ("AU", "01"),
+    # Brazil — 26 states + DF (geonames numeric admin1)
+    "acre": ("BR", "01"), "alagoas": ("BR", "02"), "amapa": ("BR", "03"),
+    "amazonas": ("BR", "04"), "bahia": ("BR", "05"), "ceara": ("BR", "06"),
+    "distrito federal": ("BR", "07"), "espirito santo": ("BR", "08"),
+    "goias": ("BR", "29"), "maranhao": ("BR", "10"), "mato grosso": ("BR", "11"),
+    "mato grosso do sul": ("BR", "11"), "minas gerais": ("BR", "15"),
+    "para": ("BR", "14"), "paraiba": ("BR", "15"), "parana": ("BR", "18"),
+    "pernambuco": ("BR", "17"), "piaui": ("BR", "20"),
+    "rio de janeiro": ("BR", "21"), "rio grande do norte": ("BR", "22"),
+    "rio grande do sul": ("BR", "23"), "rondonia": ("BR", "24"),
+    "roraima": ("BR", "25"), "santa catarina": ("BR", "26"),
+    "sao paulo": ("BR", "27"), "sergipe": ("BR", "28"), "tocantins": ("BR", "31"),
+    # China — major provinces (numeric)
+    "beijing": ("CN", "22"), "shanghai": ("CN", "23"), "tianjin": ("CN", "28"),
+    "chongqing": ("CN", "33"), "guangdong": ("CN", "30"), "sichuan": ("CN", "32"),
+    "jiangsu": ("CN", "04"), "zhejiang": ("CN", "02"), "shandong": ("CN", "25"),
+    "henan": ("CN", "09"), "hebei": ("CN", "10"), "hunan": ("CN", "11"),
+    "hubei": ("CN", "12"), "anhui": ("CN", "01"), "fujian": ("CN", "07"),
+    "yunnan": ("CN", "29"), "jiangxi": ("CN", "03"), "liaoning": ("CN", "19"),
+    "heilongjiang": ("CN", "08"), "shaanxi": ("CN", "26"), "shanxi": ("CN", "24"),
+    "guizhou": ("CN", "18"), "gansu": ("CN", "15"), "tibet": ("CN", "14"),
+    "xinjiang": ("CN", "13"), "inner mongolia": ("CN", "20"),
+    "guangxi": ("CN", "16"), "ningxia": ("CN", "21"), "qinghai": ("CN", "06"),
+    "hainan": ("CN", "31"), "jilin": ("CN", "05"), "taiwan": ("CN", "34"),
+}
+
+
 # ISO-2 country code aliases the agent might pass through `region`.
 COUNTRY_ALIAS: dict[str, str] = {
     "us": "US", "usa": "US", "united states": "US", "america": "US",
@@ -147,9 +257,15 @@ def _normalize_place(s: str) -> str:
 def _filter_real_by_region(region: str):
     if _REAL_DF is None:
         return None
-    code = COUNTRY_ALIAS.get(region.lower().strip())
+    key = region.lower().strip()
+    code = COUNTRY_ALIAS.get(key)
     if code:
         return _REAL_DF[_REAL_DF["country"] == code]
+    # Try sub-national subdivision (state / province) before falling back to name match.
+    sub = SUBDIVISION_ALIAS.get(key)
+    if sub and "admin1_code" in _REAL_DF.columns:
+        country, admin1 = sub
+        return _REAL_DF[(_REAL_DF["country"] == country) & (_REAL_DF["admin1_code"] == admin1)]
     needle = _normalize_place(region)
     mask = _REAL_DF["name"].apply(lambda n: needle in _normalize_place(str(n)))
     return _REAL_DF[mask]

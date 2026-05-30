@@ -134,7 +134,32 @@ def get_client() -> AsyncAnthropic:
     return _client
 
 
-async def run_agent(user_message: str, max_iters: int = 6) -> AsyncIterator[AgentEvent]:
+_MAX_HISTORY_TURNS = 12  # cap context — beyond ~6 round-trips the cache savings flip
+
+
+def _build_history_messages(history: list[dict[str, Any]] | None) -> list[dict[str, Any]]:
+    """Convert ChatOrb-format turns ({role: 'user'|'agent', text}) into Anthropic message format.
+    Drops empty turns, truncates to the last N, and merges consecutive same-role turns."""
+    if not history:
+        return []
+    cleaned = [h for h in history if (h.get("text") or "").strip()]
+    cleaned = cleaned[-_MAX_HISTORY_TURNS:]
+    out: list[dict[str, Any]] = []
+    for h in cleaned:
+        role = "assistant" if h.get("role") == "agent" else "user"
+        text = h["text"].strip()
+        if out and out[-1]["role"] == role:
+            out[-1]["content"] += "\n\n" + text
+        else:
+            out.append({"role": role, "content": text})
+    return out
+
+
+async def run_agent(
+    user_message: str,
+    history: list[dict[str, Any]] | None = None,
+    max_iters: int = 6,
+) -> AsyncIterator[AgentEvent]:
     """Run one user turn through Claude tool-use. Yields typed events the FastAPI SSE layer relays to the client.
 
     Never raises — setup errors and runtime errors both surface as `error` events
@@ -149,7 +174,13 @@ async def run_agent(user_message: str, max_iters: int = 6) -> AsyncIterator[Agen
         return
 
     model = _pick_model(user_message)
-    messages: list[dict[str, Any]] = [{"role": "user", "content": user_message}]
+    prior = _build_history_messages(history)
+    # If the most recent prior turn is also user, merge it into the new message
+    # rather than producing two user turns in a row (Anthropic rejects that).
+    if prior and prior[-1]["role"] == "user":
+        last = prior.pop()
+        user_message = last["content"] + "\n\n" + user_message
+    messages: list[dict[str, Any]] = prior + [{"role": "user", "content": user_message}]
 
     for _ in range(max_iters):
         # One inner retry on overload — Anthropic's SDK already retries network

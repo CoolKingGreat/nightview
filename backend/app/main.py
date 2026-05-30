@@ -58,9 +58,11 @@ async def chat(request: Request, body: ChatRequest) -> StreamingResponse:
     if not allowed:
         raise HTTPException(status_code=429, detail=reason)
 
+    history = [t.model_dump() for t in body.history]
+
     async def event_stream():
         try:
-            async for event in run_agent(body.message):
+            async for event in run_agent(body.message, history=history):
                 yield event.to_sse()
         finally:
             record_request(ip)

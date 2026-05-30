@@ -5,9 +5,15 @@ from pydantic import BaseModel, Field
 Granularity = Literal["place", "region", "cell"]
 
 
+class ChatTurn(BaseModel):
+    role: Literal["user", "agent"]
+    text: str
+
+
 class ChatRequest(BaseModel):
     message: str
     session_id: str | None = None
+    history: list[ChatTurn] = Field(default_factory=list)
 
 
 class GlobeAction(BaseModel):

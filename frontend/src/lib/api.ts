@@ -3,12 +3,18 @@ import type { AgentEvent } from './types';
 const API_BASE = (import.meta.env.VITE_BACKEND_URL || '').replace(/\/$/, '');
 const url = (p: string) => `${API_BASE}${p}`;
 
+export interface ChatTurn {
+  role: 'user' | 'agent';
+  text: string;
+}
+
 /**
  * Stream typed agent events from POST /api/chat (SSE).
  * Each `data: { ... }` line becomes one yielded AgentEvent.
  */
 export async function* streamChat(
   message: string,
+  history: ChatTurn[] = [],
   signal?: AbortSignal,
 ): AsyncIterable<AgentEvent> {
   let res: Response;
@@ -16,7 +22,7 @@ export async function* streamChat(
     res = await fetch(url('/api/chat'), {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ message }),
+      body: JSON.stringify({ message, history }),
       signal,
     });
   } catch (err) {
@@ -69,4 +75,14 @@ export async function fetchAllCities() {
   const res = await fetch(url('/api/cities'));
   if (!res.ok) throw new Error(`cities ${res.status}`);
   return res.json() as Promise<{ cities: import('./types').City[] }>;
+}
+
+export async function fetchPoint(lat: number, lon: number) {
+  const res = await fetch(url('/api/point'), {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ lat, lon }),
+  });
+  if (!res.ok) throw new Error(`point ${res.status}`);
+  return res.json();
 }

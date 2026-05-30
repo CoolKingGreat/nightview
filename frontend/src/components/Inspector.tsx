@@ -1,5 +1,6 @@
 import { motion } from 'motion/react';
 import { useEffect, useState } from 'react';
+import { fetchPoint } from '../lib/api';
 import type { City, TimeSeriesPoint } from '../lib/types';
 
 const ease = [0.16, 1, 0.3, 1] as const;
@@ -47,12 +48,7 @@ export function Inspector({ city, year, onBack }: Props) {
     setLoading(true);
     setError(null);
     setData(null);
-    fetch('/api/point', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ lat: city.lat, lon: city.lon }),
-    })
-      .then((r) => r.json())
+    fetchPoint(city.lat, city.lon)
       .then((d: PointResponse) => {
         setData(d);
         setLoading(false);
