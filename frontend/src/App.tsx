@@ -7,6 +7,7 @@ import { HoverTooltip } from './components/HoverTooltip';
 import { Inspector } from './components/Inspector';
 import { ObservatoryHud } from './components/ObservatoryHud';
 import { TIME_NOW, TimeRibbon } from './components/TimeRibbon';
+import { Welcome } from './components/Welcome';
 import type { City, GlobeAction } from './lib/types';
 
 const ease = [0.16, 1, 0.3, 1] as const;
@@ -130,6 +131,8 @@ export default function App() {
           )}
         </AnimatePresence>
       </section>
+
+      <Welcome />
 
       <AnimatePresence mode="wait">
         {inspected ? (

@@ -12,24 +12,27 @@ interface Props {
   onYearChange: (year: number) => void;
 }
 
+const BASE_YEARS_PER_SEC = 4;
+
 export function TimeRibbon({ year, onYearChange }: Props) {
   const [playing, setPlaying] = useState(false);
+  const [turbo, setTurbo] = useState(false);
   const trackRef = useRef<HTMLDivElement>(null);
   const draggingRef = useRef(false);
   const rafRef = useRef<number | null>(null);
   const lastTickRef = useRef<number>(0);
 
-  // Year auto-advance when playing. ~2 years per second.
   useEffect(() => {
     if (!playing) {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       return;
     }
+    const rate = BASE_YEARS_PER_SEC * (turbo ? 2 : 1);
     const tick = (timestamp: number) => {
       if (!lastTickRef.current) lastTickRef.current = timestamp;
       const dt = (timestamp - lastTickRef.current) / 1000;
       lastTickRef.current = timestamp;
-      onYearChange(Math.min(TIME_MAX, year + dt * 2));
+      onYearChange(Math.min(TIME_MAX, year + dt * rate));
       if (year >= TIME_MAX) {
         setPlaying(false);
         lastTickRef.current = 0;
@@ -42,7 +45,7 @@ export function TimeRibbon({ year, onYearChange }: Props) {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       lastTickRef.current = 0;
     };
-  }, [playing, year, onYearChange]);
+  }, [playing, turbo, year, onYearChange]);
 
   const yearFromX = (clientX: number) => {
     const rect = trackRef.current?.getBoundingClientRect();
@@ -87,6 +90,19 @@ export function TimeRibbon({ year, onYearChange }: Props) {
           className="grid h-6 w-6 place-items-center rounded-full border border-white/[0.12] bg-[#04060D]/70 font-mono text-[10px] text-ink/80 backdrop-blur-md transition-colors hover:border-glow/40 hover:text-glow"
         >
           {playing ? '❚❚' : '▶'}
+        </button>
+        <button
+          type="button"
+          onClick={() => setTurbo((t) => !t)}
+          aria-label={turbo ? 'normal speed' : 'double speed'}
+          aria-pressed={turbo}
+          className={`grid h-6 w-7 place-items-center rounded-full border bg-[#04060D]/70 font-mono text-[9px] tabular-nums backdrop-blur-md transition-colors ${
+            turbo
+              ? 'border-glow/60 text-glow'
+              : 'border-white/[0.12] text-ink/65 hover:border-glow/40 hover:text-glow'
+          }`}
+        >
+          2×
         </button>
         <span className="font-display text-[1.6rem] tabular-nums leading-none text-ink/95">
           {yearLabel}
