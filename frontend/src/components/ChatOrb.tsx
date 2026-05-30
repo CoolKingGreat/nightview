@@ -117,9 +117,9 @@ export function ChatOrb({ onGlobeAction, onActive }: Props) {
       initial={{ opacity: 0, x: 18 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.8, delay: 0.35, ease }}
-      className="relative z-40 flex h-full min-h-0 flex-col border-l border-white/[0.05] bg-[#040610]/85 backdrop-blur-2xl"
+      className="relative z-40 flex h-full min-h-0 flex-col bg-[#040610]/85 backdrop-blur-2xl md:border-l md:border-white/[0.05]"
     >
-      <div className="relative px-6 pb-5 pt-7">
+      <div className="relative px-6 pb-5 pt-12 md:pt-7">
         <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.32em] text-muted">
           <span className="inline-block h-1 w-1 rounded-full bg-glow/80 shadow-[0_0_6px_rgba(255,217,120,0.7)]" />
           ask nightview

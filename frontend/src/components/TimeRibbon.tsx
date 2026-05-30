@@ -80,7 +80,7 @@ export function TimeRibbon({ year, onYearChange }: Props) {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.9, delay: 1.3, ease }}
-      className="pointer-events-auto absolute bottom-14 left-1/2 z-30 w-[min(640px,68%)] -translate-x-1/2 select-none"
+      className="pointer-events-auto absolute bottom-[calc(env(safe-area-inset-bottom)+56px)] left-1/2 z-30 w-[88%] -translate-x-1/2 select-none md:bottom-14 md:w-[min(640px,68%)]"
     >
       <div className="mb-2 flex items-baseline gap-3">
         <button

@@ -79,7 +79,7 @@ export function CitySearch({ onSelect }: Props) {
       initial={{ opacity: 0, y: -6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.9, delay: 0.45, ease }}
-      className="pointer-events-auto absolute right-8 top-7 z-40 w-[240px]"
+      className="pointer-events-auto absolute right-4 top-5 z-40 w-[180px] md:right-8 md:top-7 md:w-[240px]"
     >
       <div className="flex items-baseline justify-end gap-2 font-mono text-[9px] uppercase tracking-[0.3em] text-muted">
         <span className="text-glow/60">⌕</span>

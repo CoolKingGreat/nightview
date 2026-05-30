@@ -84,13 +84,13 @@ export function Inspector({ city, year, onBack }: Props) {
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.5, ease }}
-      className="relative z-40 flex h-full min-h-0 flex-col border-l border-white/[0.05] bg-[#040610]/90 backdrop-blur-2xl"
+      className="relative z-40 flex h-full min-h-0 flex-col bg-[#040610]/90 backdrop-blur-2xl md:border-l md:border-white/[0.05]"
     >
-      <div className="relative border-b border-white/[0.05] px-6 pb-5 pt-7">
+      <div className="relative border-b border-white/[0.05] px-6 pb-5 pt-12 md:pt-7">
         <button
           type="button"
           onClick={onBack}
-          className="group mb-4 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.28em] text-muted transition-colors hover:text-glow"
+          className="group mb-4 hidden items-center gap-2 font-mono text-[10px] uppercase tracking-[0.28em] text-muted transition-colors hover:text-glow md:flex"
         >
           <span className="inline-block transition-transform duration-300 group-hover:-translate-x-1">←</span>
           back to chat

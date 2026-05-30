@@ -1,8 +1,19 @@
+import { useEffect, useState } from 'react';
 import type { HoverState } from './Globe';
 
 const ARROW_OFFSET = 16;
 
 export function HoverTooltip({ state }: { state: HoverState | null }) {
+  const [touchDevice, setTouchDevice] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(pointer: coarse)');
+    setTouchDevice(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => setTouchDevice(e.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
+  if (touchDevice) return null;
   if (!state || !state.city || typeof state.city.trend !== 'number') return null;
   const { city, x, y } = state;
   const trendStr = city.trend > 0 ? `+${city.trend.toFixed(1)}` : city.trend.toFixed(1);
