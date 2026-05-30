@@ -235,10 +235,7 @@ export function ChatOrb({ onGlobeAction, onActive }: Props) {
           disabled={busy}
           className="min-h-[84px] w-full resize-none bg-transparent font-body text-[14px] leading-relaxed text-ink/90 placeholder:text-muted/60 outline-none disabled:opacity-50"
         />
-        <div className="mt-3 flex items-center justify-between">
-          <div className="font-mono text-[9px] uppercase tracking-[0.28em] text-muted/70">
-            enter sends
-          </div>
+        <div className="mt-3 flex items-center justify-end">
           <button
             type="button"
             disabled={!input.trim() || busy}
