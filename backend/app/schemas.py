@@ -49,6 +49,9 @@ class TimeSeriesResult(BaseModel):
     history: list[TimeSeriesPoint]
     forecast: list[TimeSeriesPoint]
     forecast_confidence: Literal["high", "medium", "low"]
+    # Great-circle km from the queried lat/lon to `place`. >0 means the user's
+    # exact spot is not in the dataset and `place` is the nearest available one.
+    distance_km: float | None = None
 
 
 class PointQuery(BaseModel):

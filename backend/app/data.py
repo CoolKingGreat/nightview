@@ -182,6 +182,18 @@ def _viirs_to_sqm(radiance_nw: float) -> float:
     return 22.0 - 2.5 * math.log10(ratio)
 
 
+def _haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    import math
+    r = 6371.0
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = (
+        math.sin(dlat / 2) ** 2
+        + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2) ** 2
+    )
+    return 2 * r * math.asin(math.sqrt(a))
+
+
 # ---------------------------------------------------------------------------
 # Real-data layer (Parquet → pandas)
 # ---------------------------------------------------------------------------
@@ -398,6 +410,7 @@ def point_timeseries(lat: float, lon: float, granularity: Granularity = "place")
         idx = squared.idxmin()
         row = df.loc[idx]
         place = _row_to_place(row)
+        distance_km = round(_haversine_km(lat, lon, float(row["lat"]), float(row["lon"])), 1)
         history = _expand_monthly(row["history_monthly_nw"], _HISTORY_START_YEAR, _HISTORY_START_MONTH)
         forecast_start_month_idx = len(history)
         forecast_start_year = _HISTORY_START_YEAR + (
@@ -413,10 +426,12 @@ def point_timeseries(lat: float, lon: float, granularity: Granularity = "place")
             history=history,
             forecast=forecast,
             forecast_confidence=confidence,
+            distance_km=distance_km,
         )
 
     # Mock fallback — synthesize a plausible series.
     closest = min(_MOCK_PLACES, key=lambda p: (p.lat - lat) ** 2 + (p.lon - lon) ** 2)
+    distance_km = round(_haversine_km(lat, lon, closest.lat, closest.lon), 1)
     rng = random.Random(int((closest.lat * 1000) + (closest.lon * 1000)))
     base = 5.0 + rng.random() * 10
     slope_per_month = (closest.trend_pct_per_yr / 100) / 12
@@ -447,6 +462,7 @@ def point_timeseries(lat: float, lon: float, granularity: Granularity = "place")
     confidence = "high" if abs(closest.trend_pct_per_yr) > 2 else "medium"
     return TimeSeriesResult(
         place=closest, history=history, forecast=forecast, forecast_confidence=confidence,
+        distance_km=distance_km,
     )
 
 
