@@ -2,7 +2,7 @@
 
 > An interactive 3D globe of how the night sky has changed across Earth since 2012 — with a conversational AI agent built on Claude that drives the camera and surfaces patterns in real VIIRS satellite data.
 
-![Nightview screenshot placeholder — globe with heatmap, chat panel, time ribbon](docs/screenshot.png)
+![Nightview Globe Screenshot](screenshot.png)
 
 [Live demo](#) · [Case study](#) · [Methodology](#methodology)
 
