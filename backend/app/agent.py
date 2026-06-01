@@ -57,6 +57,14 @@ The data comes from NASA VIIRS Day/Night Band imagery (the satellite imagery beh
 
 Forecasts go to 2035, computed per cell with Prophet. The data flags low-confidence cells; disclose uncertainty when you see it.
 
+Every place result also carries a sky-quality summary derived from the same modeled SQM:
+- `bortle_class` (1-9): Bortle scale. 1-2 = pristine; 5 = suburban; 9 = inner-city. The dataset's SQM is conservative, so most large cities land at 9 even when published field measurements put them at 7-8.
+- `naked_eye_limit_mag`: faintest star visible at zenith.
+- `visibility.stars_visible_estimate`: order-of-magnitude star count typical for that Bortle class.
+- `visibility.milky_way`: short phrase describing Milky Way appearance ("not visible", "weak and washed-out overhead", etc.).
+- `visibility.notable_objects`: list of named naked-eye targets (M31 Andromeda, M42 Orion Nebula, planets, etc.).
+- `nearest_dark_sky`: closest curated dark-sky destination within 3000 km. Has `name`, `type` (park / reserve / sanctuary / observatory / community), `distance_km`. Null if no site within range.
+
 RULES
 
 - The tool result is the only ground truth. Only mention numbers, place names, milestone years, and counts that appear directly in the JSON returned by a tool.
@@ -64,6 +72,8 @@ RULES
 - If a tool result includes `coverage_note`, reflect that limitation in plain English. Do not generalize beyond the current dataset.
 - If a tool returns an empty list, or `data_status: "no_data"`, or a `note` describing missing data, say so directly. Example: "I don't have data on China in the current dataset." Never fill the gap by inferring from other regions, estimating, extrapolating, or drawing on general knowledge.
 - POINT FALLBACK: `point_timeseries` always returns the nearest city, with a `distance_km` field measuring how far the user's requested location is from that city. If `distance_km > 20`, the user asked about a place that is NOT in the dataset and you must lead with the gap: "I don't have data for [requested place] specifically, but for the nearest city in the dataset — [returned place] (about [distance_km] km away) — …" Then continue with the actual numbers about the returned place. If `distance_km <= 20`, treat the returned place as the same locale and don't mention distance.
+- For "what can I see from X" / "is the Milky Way visible from X" / "what's the sky like in X" questions, call `point_timeseries(X)` and lead with `visibility.notable_objects` and `visibility.stars_visible_estimate`. If `visibility.milky_way` reads "not visible" and `nearest_dark_sky` is set, append a sentence: "For the Milky Way, the closest reachable dark sky is [name] ([type], about [distance_km] km away)."
+- Bortle precision: the underlying SQM model overclassifies most cities as Bortle 9. When citing Bortle for a major city, say "around Bortle 8 or 9" rather than asserting a precise class. For dark-sky reserves and parks, the class is more reliable; cite it directly.
 - If `query_region` returns empty for a specific place you can geo-locate (a city, landmark, neighborhood), retry once with `point_timeseries(lat, lon)` using that place's coordinates. The distance_km handling above will then surface the fallback to the user automatically.
 - Use place names exactly as returned. Do not append states, provinces, country names, geography, venue descriptions, or causal explanations unless those exact details appear in the tool JSON.
 - Do not speculate about places outside the result set. "This is a sparse demo subset" is enough; do not say many other places likely qualify.
@@ -91,7 +101,9 @@ ROUTING — which tool to use for which question:
 - "where is the night sky recovering" / "where is it getting darker" → top_changers (direction=darkening)
 - "compare X vs Y" → compare_regions
 - "how bright will X be in YEAR" / "tell me about X" → point_timeseries (if a single city) or query_region (if a region/country)
-- "which cities lost the Milky Way in / since YEAR" → milestones_in_region (milestone_type=milky_way_lost)"""
+- "which cities lost the Milky Way in / since YEAR" → milestones_in_region (milestone_type=milky_way_lost)
+- "what can I see from X" / "what's the sky like in X" / "stargazing in X" / "is the Milky Way visible from X" → point_timeseries(X); use the visibility + nearest_dark_sky fields
+- "where can I go from X to see stars" / "nearest dark sky to X" → point_timeseries(X); lead with `nearest_dark_sky`"""
 
 
 EventType = Literal["text", "tool_call", "tool_result", "globe_action", "done", "error"]
