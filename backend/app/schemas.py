@@ -66,6 +66,10 @@ class PlaceResult(BaseModel):
     milky_way_regained_year: int | None = None
     brightness_doubled_year: int | None = None
     brightness_halved_year: int | None = None
+    # "measured" = per-pixel VIIRS DNB via Google Earth Engine (NASA VNP46A2).
+    # "modeled" = population-derived baseline + published country-level trend.
+    # Used by the agent to decide whether to cite numbers precisely or hedge.
+    data_source: Literal["measured", "modeled"] | None = None
 
 
 class TimeSeriesPoint(BaseModel):

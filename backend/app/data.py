@@ -459,6 +459,7 @@ def _row_to_place(row) -> PlaceResult:
         milky_way_regained_year=_int_or_none(row.get("milky_way_regained_year")),
         brightness_doubled_year=_int_or_none(row.get("brightness_doubled_year")),
         brightness_halved_year=_int_or_none(row.get("brightness_halved_year")),
+        data_source=(row.get("data_source") if row.get("data_source") in ("measured", "modeled") else None),
     )
 
 
