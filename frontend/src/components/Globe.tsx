@@ -383,6 +383,14 @@ export const Globe = forwardRef<GlobeHandle, Props>(function Globe({ autoRotate 
     };
     viewer.scene.preRender.addEventListener(rotate);
 
+    // Cesium's default double-click sets viewer.trackedEntity, which warps the
+    // camera in to ~ground level on the picked dot — looks like the globe broke
+    // and forces a reset. Single-click already opens the Inspector; kill the
+    // default so a double-click is a no-op instead.
+    viewer.screenSpaceEventHandler.removeInputAction(
+      Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK,
+    );
+
     // Hover + click → city pick. ScreenSpaceEventHandler binds to the canvas,
     // not the React props, so we read latest callbacks via closures from refs.
     const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
