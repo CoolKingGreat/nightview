@@ -9,7 +9,11 @@ function currentUtc(): string {
   return `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}`;
 }
 
-export function ObservatoryHud() {
+interface Props {
+  onOpenMethodology?: () => void;
+}
+
+export function ObservatoryHud({ onOpenMethodology }: Props = {}) {
   const [utc, setUtc] = useState(currentUtc());
 
   useEffect(() => {
@@ -51,13 +55,22 @@ export function ObservatoryHud() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.9, delay: 0.85, ease }}
-        className="pointer-events-none absolute bottom-2 right-8 z-30 hidden text-right md:block"
+        className="absolute bottom-2 right-8 z-30 hidden text-right md:block"
       >
-        <div className="font-mono text-[9px] uppercase leading-relaxed tracking-[0.28em] text-muted/80">
+        <div className="pointer-events-none font-mono text-[9px] uppercase leading-relaxed tracking-[0.28em] text-muted/80">
           data · nasa viirs day-night band
           <br />
           built by aryan valsa
         </div>
+        {onOpenMethodology && (
+          <button
+            type="button"
+            onClick={onOpenMethodology}
+            className="mt-1 font-mono text-[9px] uppercase tracking-[0.28em] text-muted/60 transition-colors hover:text-glow"
+          >
+            methodology →
+          </button>
+        )}
       </motion.div>
     </>
   );

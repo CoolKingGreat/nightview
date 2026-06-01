@@ -60,8 +60,10 @@ from __future__ import annotations
 import argparse
 import math
 import os
+import signal
 import sys
 import time
+from contextlib import contextmanager
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -104,6 +106,26 @@ def authenticate_gee(project: str):
     else:
         ee.Initialize(project=project)
     return ee
+
+
+class GEETimeout(Exception):
+    pass
+
+
+@contextmanager
+def _alarm(seconds: int):
+    """Hard wall-clock timeout via SIGALRM. Works because GEE getInfo() runs in
+    the main thread on a single CPython interpreter — SIGALRM interrupts even a
+    blocking C call. Not portable to Windows but we deploy on macOS/Linux only."""
+    def _handler(signum, frame):
+        raise GEETimeout(f"timed out after {seconds}s")
+    old = signal.signal(signal.SIGALRM, _handler)
+    signal.alarm(seconds)
+    try:
+        yield
+    finally:
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, old)
 
 
 def sample_city(ee, city: dict) -> list[tuple[str, float]]:
@@ -257,13 +279,33 @@ def _haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     return 2 * r * math.asin(math.sqrt(a))
 
 
+def _norm_name(s: str) -> str:
+    """Normalize a place name for dedupe matching: strip diacritics, fold case,
+    expand St./Mt./Ft. abbreviations, and remove non-alphanumerics. Catches
+    'São Paulo' == 'Sao Paulo', 'St. Louis' == 'Saint Louis', 'Bogotá' ==
+    'Bogota' — same city, different rendering across data sources."""
+    import re
+    import unicodedata
+    s = unicodedata.normalize("NFKD", str(s)).encode("ascii", "ignore").decode("ascii").lower()
+    for short, long_ in [
+        ("st. ", "saint "), ("st.", "saint "),
+        ("mt. ", "mount "), ("mt.", "mount "),
+        ("ft. ", "fort "), ("ft.", "fort "),
+    ]:
+        s = s.replace(short, long_)
+    s = re.sub(r"[^a-z0-9 ]+", "", s)
+    return " ".join(s.split())
+
+
 def merge_into_parquet(output_path: Path, measured_rows: list[dict]) -> None:
-    """Load the existing Parquet, drop any modeled row that's the same city as
-    a fresh measured row (matched by name case-insensitive + haversine within
+    """Load the existing Parquet, drop any row that's the same city as one of
+    the fresh measured rows (matched by normalized name + haversine within
     100 km), append the measured rows, write back. The 100 km radius is loose
     enough to absorb coord drift between geonamescache and the seed CSV but
     tight enough to keep truly-different same-name cities apart (e.g.
-    Newcastle AU vs Newcastle ZA are ~10,000 km apart)."""
+    Newcastle AU vs Newcastle ZA are ~10,000 km apart). Both modeled AND
+    earlier measured rows that collide get replaced by the fresh measured
+    row, so re-running a city always produces a single canonical entry."""
     import pandas as pd
 
     if not output_path.exists():
@@ -277,36 +319,26 @@ def merge_into_parquet(output_path: Path, measured_rows: list[dict]) -> None:
     if "data_source" not in existing.columns:
         existing["data_source"] = "modeled"
 
-    drops: set[int] = set()
+    # Index existing rows by normalized name for fast lookup.
     name_index: dict[str, list[int]] = {}
     for idx, row in existing.iterrows():
-        name_index.setdefault(str(row["name"]).lower(), []).append(int(idx))
+        name_index.setdefault(_norm_name(row["name"]), []).append(int(idx))
 
+    drops: set[int] = set()
     for m in measured_rows:
-        candidates = name_index.get(str(m["name"]).lower(), [])
+        candidates = name_index.get(_norm_name(m["name"]), [])
         for idx in candidates:
             existing_row = existing.iloc[idx]
-            if existing_row["data_source"] == "measured":
-                continue  # never displace an earlier measurement; we'll overwrite via append-replace below
-            dist = _haversine_km(m["lat"], m["lon"], float(existing_row["lat"]), float(existing_row["lon"]))
+            dist = _haversine_km(
+                m["lat"], m["lon"], float(existing_row["lat"]), float(existing_row["lon"])
+            )
             if dist < 100:
                 drops.add(idx)
 
     keep = existing.drop(index=list(drops))
     measured_df = pd.DataFrame(measured_rows)
-
-    # If we're re-running a city already measured (same name + within 100 km of a
-    # prior measured row), drop the old measured row so the fresh one wins.
-    for m in measured_rows:
-        same = keep[
-            (keep["name"].astype(str).str.lower() == m["name"].lower())
-            & (keep["data_source"] == "measured")
-        ]
-        for idx, row in same.iterrows():
-            if _haversine_km(m["lat"], m["lon"], float(row["lat"]), float(row["lon"])) < 100:
-                keep = keep.drop(index=idx)
-
     merged = pd.concat([keep, measured_df], ignore_index=True)
+
     output_path.parent.mkdir(parents=True, exist_ok=True)
     merged.to_parquet(output_path, compression="snappy")
 
@@ -317,18 +349,35 @@ def merge_into_parquet(output_path: Path, measured_rows: list[dict]) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Real VIIRS DNB ingestion via Google Earth Engine.")
-    parser.add_argument("--cities", type=Path, default=DEFAULT_CITIES)
+    parser.add_argument("--cities", type=Path, default=DEFAULT_CITIES,
+                        help="CSV input. Ignored if --from-parquet is set.")
+    parser.add_argument("--from-parquet", action="store_true",
+                        help="Read cities to ingest from the existing parquet's modeled rows "
+                             "(sorted by population descending). Lets you expand measurement "
+                             "coverage incrementally without re-doing already-measured cities.")
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
-    parser.add_argument("--limit", type=int, default=None, help="Only process the first N cities (testing)")
+    parser.add_argument("--limit", type=int, default=None, help="Only process the first N cities")
     parser.add_argument("--project", type=str, default=os.environ.get("GEE_PROJECT_ID"),
                         help="Google Cloud project ID registered with GEE (or set GEE_PROJECT_ID).")
+    parser.add_argument("--checkpoint-every", type=int, default=50,
+                        help="Save partial results to the output parquet every N cities so a "
+                             "crash mid-run doesn't lose progress. Default 50.")
     args = parser.parse_args()
 
     if not args.project:
         sys.exit("--project is required (or set GEE_PROJECT_ID env var)")
 
     import pandas as pd
-    cities = pd.read_csv(args.cities, keep_default_na=False, na_values=[""])
+    if args.from_parquet:
+        if not args.output.exists():
+            sys.exit(f"--from-parquet needs an existing parquet at {args.output}")
+        df = pd.read_parquet(args.output)
+        modeled = df[df["data_source"].fillna("modeled") == "modeled"].copy()
+        modeled = modeled.sort_values("population_m", ascending=False)
+        cities = modeled[["name", "country", "lat", "lon", "population_m"]].reset_index(drop=True)
+        print(f"[ingest_gee] reading {len(cities)} modeled cities from parquet (sorted by population)")
+    else:
+        cities = pd.read_csv(args.cities, keep_default_na=False, na_values=[""])
     if args.limit:
         cities = cities.head(args.limit)
 
@@ -338,12 +387,15 @@ def main() -> None:
 
     records: list[dict] = []
     t0 = time.time()
+    last_checkpoint = 0
+    PER_CITY_TIMEOUT = 60  # seconds; one stuck GEE call must not freeze the run
     for i, (_, city) in enumerate(cities.iterrows(), start=1):
         try:
             t1 = time.time()
-            series = sample_city(ee, city.to_dict())
+            with _alarm(PER_CITY_TIMEOUT):
+                series = sample_city(ee, city.to_dict())
             if len(series) < 24:
-                print(f"  [{i}/{len(cities)}] {city['name']}: insufficient data ({len(series)} months) — skip")
+                print(f"  [{i}/{len(cities)}] {city['name']}: insufficient data ({len(series)} months) — skip", flush=True)
                 continue
             rec = build_record(city.to_dict(), series)
             records.append(rec)
@@ -351,16 +403,25 @@ def main() -> None:
             print(f"  [{i}/{len(cities)}] {city['name']}: {len(series)} mo, "
                   f"baseline {rec['baseline_radiance_nw']:.2f} nW, "
                   f"trend {rec['trend_pct_per_yr']:+.2f}%/yr, "
-                  f"SQM {rec['sqm_current']:.2f} ({dt:.1f}s)")
+                  f"SQM {rec['sqm_current']:.2f} ({dt:.1f}s)", flush=True)
+
+            # Periodic checkpoint so a crash doesn't lose the run.
+            if len(records) - last_checkpoint >= args.checkpoint_every:
+                print(f"  [checkpoint] saving {len(records) - last_checkpoint} new records…", flush=True)
+                merge_into_parquet(args.output, records[last_checkpoint:])
+                last_checkpoint = len(records)
+        except GEETimeout as e:
+            print(f"  [{i}/{len(cities)}] {city['name']}: TIMEOUT after {PER_CITY_TIMEOUT}s — skip", flush=True)
         except Exception as e:
-            print(f"  [{i}/{len(cities)}] {city['name']}: FAILED — {type(e).__name__}: {e}")
+            print(f"  [{i}/{len(cities)}] {city['name']}: FAILED — {type(e).__name__}: {e}", flush=True)
 
     elapsed = time.time() - t0
     print(f"\n[ingest_gee] {len(records)} cities measured in {elapsed/60:.1f} min")
 
-    if records:
-        merge_into_parquet(args.output, records)
-    else:
+    # Flush any unsaved records.
+    if records[last_checkpoint:]:
+        merge_into_parquet(args.output, records[last_checkpoint:])
+    elif not records:
         print("[ingest_gee] no records — Parquet untouched.")
 
 

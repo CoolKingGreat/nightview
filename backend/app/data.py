@@ -771,10 +771,16 @@ def compare_regions(region_a: str, region_b: str, granularity: Granularity = "pl
     return {"a": summarize(a, region_a), "b": summarize(b, region_b)}
 
 
-# Debug helper — exposed for the /api/health endpoint to confirm which source is live.
+# Debug helper — exposed for the /api/health endpoint to confirm which source is
+# live. Also surfaces the measured/modeled split so the methodology page can
+# display the live count as the GEE ingest grows.
 def data_source() -> dict:
-    return {
+    out: dict = {
         "real_data_loaded": _REAL_DF is not None,
         "parquet_path": str(PARQUET_PATH),
         "row_count": int(len(_REAL_DF)) if _REAL_DF is not None else 0,
     }
+    if _REAL_DF is not None and "data_source" in _REAL_DF.columns:
+        out["measured"] = int((_REAL_DF["data_source"] == "measured").sum())
+        out["modeled"] = int((_REAL_DF["data_source"] == "modeled").sum())
+    return out

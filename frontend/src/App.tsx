@@ -5,6 +5,7 @@ import { CitySearch } from './components/CitySearch';
 import { Globe, type GlobeHandle, type HoverState } from './components/Globe';
 import { HoverTooltip } from './components/HoverTooltip';
 import { Inspector } from './components/Inspector';
+import { Methodology } from './components/Methodology';
 import { ObservatoryHud } from './components/ObservatoryHud';
 import { TIME_NOW, TimeRibbon } from './components/TimeRibbon';
 import { Welcome } from './components/Welcome';
@@ -20,6 +21,7 @@ export default function App() {
   const [inspected, setInspected] = useState<City | null>(null);
   const [year, setYear] = useState(TIME_NOW);
   const [chatOpenMobile, setChatOpenMobile] = useState(false);
+  const [methodologyOpen, setMethodologyOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(() =>
     typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches,
   );
@@ -97,7 +99,7 @@ export default function App() {
         >
           <Globe ref={globeRef} onHover={setHover} onSelect={handleCitySelect} year={year} />
         </motion.div>
-        <ObservatoryHud />
+        <ObservatoryHud onOpenMethodology={() => setMethodologyOpen(true)} />
         <CitySearch onSelect={handleCitySelect} />
 
         <HoverTooltip state={hover} />
@@ -232,6 +234,7 @@ export default function App() {
       </motion.div>
 
       <Welcome />
+      <Methodology open={methodologyOpen} onClose={() => setMethodologyOpen(false)} />
     </main>
   );
 }
