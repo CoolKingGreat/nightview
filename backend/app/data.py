@@ -253,7 +253,8 @@ def _sqm_to_nelm(sqm: float) -> float:
 # sanctuaries, observatories). Used by nearest_dark_sky_park() to surface
 # a "where to escape to" suggestion in the Inspector.
 _DARK_SKY_SITES: list[dict] = []
-DARK_SKY_CSV = REPO_ROOT / "data" / "raw" / "dark_sky_places.csv"
+DEFAULT_DARK_SKY_CSV = REPO_ROOT / "data" / "raw" / "dark_sky_places.csv"
+DARK_SKY_CSV = Path(os.environ.get("DARK_SKY_CSV_PATH") or DEFAULT_DARK_SKY_CSV)
 
 # Don't suggest a site that's farther than this — a 6000 km drive is not a
 # meaningful escape. Returns None instead.
