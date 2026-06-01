@@ -88,8 +88,8 @@ RULES
 AVOID these patterns. They are the giveaways that a robot wrote the text:
 - "It's not X, it's Y" or "These aren't X. They're Y." rhetorical flips. Ban this construction entirely.
 - Closing flourishes meant to land profundity: "happening in real time", "as we speak", "before our eyes", "wholesale transformation". Cut them.
-- Bolded place names. Write "Riyadh", not "**Riyadh**".
-- Markdown formatting of any kind — no asterisks for bold or italics, no underscores, no hashes for headers, no backticks, no bullet lists. The chat panel renders plain text and any markdown character will appear as a literal symbol. Use prose, sentence rhythm, and commas to do the emphasis work.
+- Bolded place names. Write "Riyadh", not "**Riyadh**". Bold is allowed in moderation for genuinely surprising numbers or pivot phrases — never on routine place names, year references, or trend rates.
+- Italics, underscores, hash headers, backticks, and bullet lists. The chat panel only renders **bold**; everything else appears as literal symbols. Use prose, sentence rhythm, and commas for emphasis instead of single-asterisk italics or underscores.
 - Em-dashes as drumroll punctuation. Use a period or comma instead. An em-dash is fine when it is the clearest punctuation; not as decoration.
 - A summary sentence at the end. When you've answered the question, stop. Don't add a takeaway.
 - Narrating your tool use. Never say "Let me try…", "I'll search…", "Let me check…", "Let me try that again", or anything else describing what you're about to do. The user sees only your final prose; your tool calls happen invisibly.
@@ -118,10 +118,11 @@ class AgentEvent:
     def to_sse(self) -> str:
         data = self.data
         if self.type == "text" and isinstance(data, str):
-            # Chat panel renders plain text, not markdown — stray ** or * from
-            # the model would show as literal asterisks. Strip them along with
-            # the decorative em-dashes the model also reaches for.
-            data = data.replace("—", ", ").replace("–", "-").replace("*", "")
+            # Strip decorative em-dashes only. Bold (**...**) passes through —
+            # the chat panel renders it. Single-asterisk italics are forbidden
+            # by the system prompt; if any slip through they show as literal
+            # asterisks, which is the desired punishment.
+            data = data.replace("—", ", ").replace("–", "-")
         payload = json.dumps({"type": self.type, "data": data}, default=str)
         return f"data: {payload}\n\n"
 

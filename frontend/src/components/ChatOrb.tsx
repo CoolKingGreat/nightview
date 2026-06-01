@@ -192,7 +192,7 @@ export function ChatOrb({ onGlobeAction, onActive }: Props) {
                     transition={{ duration: 0.4, ease }}
                     className="whitespace-pre-wrap font-body text-[14px] leading-[1.78] text-ink/88"
                   >
-                    {msg.text}
+                    {renderBold(msg.text)}
                     {msg.streaming && msg.text === '' && <TypingDots />}
                     {msg.streaming && msg.text !== '' && (
                       <span className="ml-[3px] inline-block h-[14px] w-px -mb-[2px] animate-pulse bg-glow/80 align-middle" />
@@ -250,6 +250,16 @@ export function ChatOrb({ onGlobeAction, onActive }: Props) {
         </div>
       </div>
     </motion.aside>
+  );
+}
+
+// Split a streamed agent message into bold runs (**…**) and plain text.
+// Mid-stream `**foo` with no closing pair stays as literal asterisks — the
+// next chunk fixes it once the closing `**` arrives.
+function renderBold(text: string): React.ReactNode[] {
+  const parts = text.split(/\*\*([^*]+?)\*\*/g);
+  return parts.map((part, i) =>
+    i % 2 === 0 ? part : <strong key={i} className="font-semibold text-ink/95">{part}</strong>,
   );
 }
 
