@@ -4,7 +4,7 @@ import { fetchAllCities } from '../lib/api';
 import type { City, GlobeAction, HighlightPoint } from '../lib/types';
 
 const ION_TOKEN = import.meta.env.VITE_CESIUM_ION_TOKEN as string | undefined;
-const USE_BLACK_MARBLE_BASEMAP = false;
+const USE_BLACK_MARBLE_BASEMAP = true;
 const BLACK_MARBLE_ASSET_ID = 3812;
 
 const GLOW = '#FFD978';
@@ -112,7 +112,10 @@ function addCityHeatmap(viewer: Cesium.Viewer, cities: City[]): Cesium.PointPrim
         ? Cesium.Color.fromBytes(255, 217, 120, 165)
         : Cesium.Color.BLACK.withAlpha(0.55),
       outlineWidth: hasMilestone ? 1.1 : 0.5,
-      disableDepthTestDistance: Number.POSITIVE_INFINITY,
+      // Depth-test against the globe so dots on the far side are hidden by the
+      // sphere. Otherwise every dot renders on top of everything (the default
+      // when disableDepthTestDistance is Infinity) and the back hemisphere
+      // bleeds through into the front.
       scaleByDistance: new Cesium.NearFarScalar(800_000, 1.4, 18_000_000, 0.35),
       // City object stored on the primitive so picks can read it back.
       id: c,
@@ -308,18 +311,23 @@ export const Globe = forwardRef<GlobeHandle, Props>(function Globe({ autoRotate 
     viewer.imageryLayers.removeAll();
 
     if (ION_TOKEN && USE_BLACK_MARBLE_BASEMAP) {
+      // NASA Black Marble (Earth at Night) via Cesium Ion. Already a nighttime
+      // view of the planet — city lights bright, oceans dark — so the only
+      // tuning we do is a mild brightness pullback so our diverging change-rate
+      // dots remain the focal element on top.
       Cesium.IonImageryProvider.fromAssetId(BLACK_MARBLE_ASSET_ID)
         .then((provider) => {
-          viewer.imageryLayers.removeAll();
+          if (viewerRef.current !== viewer) return;
           const layer = viewer.imageryLayers.addImageryProvider(provider);
-          layer.alpha = 0.18;
-          layer.brightness = 0.4;
-          layer.contrast = 1.55;
-          layer.saturation = 0.1;
-          layer.gamma = 0.85;
+          layer.brightness = 1.0;
+          layer.contrast = 1.0;
+          layer.saturation = 1.0;
+          layer.gamma = 1.0;
         })
         .catch((err) => {
-          console.warn('[Nightview] Black Marble unavailable.', err);
+          if (viewerRef.current === viewer) {
+            console.warn('[Nightview] Black Marble unavailable.', err);
+          }
         });
     } else {
       // Cesium ships Natural Earth II as a bundled, low-res tile set. No Ion token needed.
