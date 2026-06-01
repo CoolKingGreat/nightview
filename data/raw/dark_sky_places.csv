@@ -1,0 +1,53 @@
+name,country,type,lat,lon
+Cherry Springs State Park,US,park,41.6628,-77.8233
+Big Bend National Park,US,park,29.2498,-103.2502
+Death Valley National Park,US,park,36.5054,-117.0794
+Natural Bridges National Monument,US,park,37.6092,-110.0117
+Bryce Canyon National Park,US,park,37.5930,-112.1871
+Capitol Reef National Park,US,park,38.2972,-111.2615
+Grand Canyon National Park (North Rim),US,park,36.2135,-112.0577
+Mauna Kea Observatory,US,observatory,19.8208,-155.4681
+Joshua Tree National Park,US,park,33.8734,-115.9010
+Anza-Borrego Desert State Park,US,park,33.2581,-116.4060
+Cosmic Campground,US,sanctuary,33.4795,-108.9226
+Massacre Rim Wilderness,US,sanctuary,41.6750,-119.7100
+Boundary Waters Canoe Area Wilderness,US,park,47.8167,-91.5667
+Headlands International Dark Sky Park,US,park,45.7790,-84.7700
+Stephen C. Foster State Park,US,park,30.8273,-82.3603
+Crater Lake National Park,US,park,42.8684,-122.1685
+Voyageurs National Park,US,park,48.4979,-92.8378
+Black Canyon of the Gunnison National Park,US,park,38.5754,-107.7416
+Mont-Mégantic Dark Sky Reserve,CA,reserve,45.4555,-71.1521
+Jasper National Park,CA,park,52.8737,-118.0814
+Wood Buffalo National Park,CA,park,59.4500,-112.2500
+Bruce Peninsula National Park,CA,park,45.2425,-81.5410
+Kejimkujik National Park,CA,park,44.4030,-65.2185
+Atacama Desert,CL,observatory,-23.0000,-69.0000
+Cerro Tololo Inter-American Observatory,CL,observatory,-30.1690,-70.8050
+Paranal Observatory,CL,observatory,-24.6275,-70.4046
+Galloway Forest Park,GB,park,55.0700,-4.4800
+Brecon Beacons National Park,GB,reserve,51.8830,-3.4360
+Snowdonia National Park,GB,reserve,52.9930,-3.7800
+Exmoor National Park,GB,reserve,51.1500,-3.7300
+Northumberland National Park,GB,park,55.2820,-2.2300
+Isle of Sark,GB,community,49.4310,-2.3580
+Kerry International Dark Sky Reserve,IE,reserve,51.8500,-10.0000
+Mayo International Dark Sky Park,IE,park,53.9889,-9.7333
+Pic du Midi de Bigorre,FR,reserve,42.9367,0.1417
+Cévennes National Park,FR,reserve,44.2167,3.6000
+Westhavelland Nature Park,DE,reserve,52.7167,12.4000
+Eifel National Park,DE,park,50.5800,6.4500
+Rhön Biosphere Reserve,DE,reserve,50.5000,9.9333
+Hortobágy National Park,HU,park,47.5833,21.0500
+Alqueva Dark Sky Reserve,PT,reserve,38.2000,-7.5000
+Roque de los Muchachos (La Palma),ES,observatory,28.7600,-17.8800
+Teide National Park,ES,park,28.2730,-16.6420
+Iriomote-Ishigaki National Park,JP,park,24.3500,123.8500
+Mitzpe Ramon / Ramon Crater,IL,reserve,30.6000,34.8000
+Wadi Rum,JO,park,29.5333,35.4167
+NamibRand Reserve,NA,reserve,-25.0000,16.0000
+South African Astronomical Observatory (Sutherland),ZA,observatory,-32.3789,20.8108
+Warrumbungle National Park,AU,park,-31.2745,149.0008
+Aoraki / Mt Cook,NZ,reserve,-43.6000,170.1000
+Aotea / Great Barrier Island,NZ,sanctuary,-36.2000,175.4500
+Wai-iti Recreation Reserve,NZ,park,-41.5500,173.0500

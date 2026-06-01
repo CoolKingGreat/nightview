@@ -5,10 +5,29 @@ import type { City, TimeSeriesPoint } from '../lib/types';
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
+interface DarkSky {
+  name: string;
+  country?: string | null;
+  type: string;
+  lat: number;
+  lon: number;
+  distance_km: number;
+}
+
+interface Visibility {
+  stars_visible_estimate: string;
+  milky_way: string;
+  notable_objects: string[];
+}
+
 interface PointResponse {
   place: {
     name: string;
     sqm_current?: number;
+    bortle_class?: number | null;
+    naked_eye_limit_mag?: number | null;
+    nearest_dark_sky?: DarkSky | null;
+    visibility?: Visibility | null;
     forecast_2035_pct_vs_2012?: number;
     milky_way_lost_year?: number | null;
     milky_way_regained_year?: number | null;
@@ -19,6 +38,18 @@ interface PointResponse {
   forecast: TimeSeriesPoint[];
   forecast_confidence: string;
 }
+
+const BORTLE_LABELS: Record<number, string> = {
+  1: 'excellent dark-sky',
+  2: 'typical dark-sky',
+  3: 'rural',
+  4: 'rural / suburban',
+  5: 'suburban',
+  6: 'bright suburban',
+  7: 'suburban / urban',
+  8: 'city',
+  9: 'inner city',
+};
 
 interface Props {
   city: City;
@@ -129,6 +160,18 @@ export function Inspector({ city, year, onBack }: Props) {
         {loading && <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-muted">loading time series…</p>}
         {error && <p className="font-mono text-[11px] text-[#E67462]">{error}</p>}
 
+        {data && data.place.bortle_class != null && (
+          <SkyOverhead
+            bortle={data.place.bortle_class}
+            nelm={data.place.naked_eye_limit_mag ?? null}
+            milkyWayLostYear={data.place.milky_way_lost_year ?? null}
+          />
+        )}
+
+        {data && data.place.visibility && (
+          <YouCanSee visibility={data.place.visibility} />
+        )}
+
         {data && (
           <>
             <div>
@@ -165,10 +208,34 @@ export function Inspector({ city, year, onBack }: Props) {
                 No tracked milestones for this place during the VIIRS record (2012–present).
               </div>
             )}
+
+            {data.place.nearest_dark_sky && data.place.nearest_dark_sky.distance_km >= 5 && (
+              <NearestDarkSky place={data.place.nearest_dark_sky} />
+            )}
           </>
         )}
       </div>
     </motion.aside>
+  );
+}
+
+function NearestDarkSky({ place }: { place: DarkSky }) {
+  const km = Math.round(place.distance_km);
+  return (
+    <div>
+      <div className="mb-3 font-mono text-[9px] uppercase tracking-[0.32em] text-muted">
+        darkest sky nearby
+      </div>
+      <div className="border-b border-white/[0.04] pb-3">
+        <div className="font-display text-[15px] leading-tight text-ink/95">{place.name}</div>
+        <div className="mt-1.5 font-mono text-[10px] uppercase tracking-[0.28em] text-muted">
+          {place.type}
+          {place.country ? ` · ${place.country}` : ''}
+          {' · '}
+          <span className="text-glow/85">{km.toLocaleString()} km</span>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -178,6 +245,97 @@ function Stat({ label, value, accent }: { label: string; value: string; accent?:
     <div>
       <div className="font-mono text-[9px] uppercase tracking-[0.32em] text-muted">{label}</div>
       <div className={`mt-1 font-display text-[16px] tabular-nums ${valueClass}`}>{value}</div>
+    </div>
+  );
+}
+
+function SkyOverhead({
+  bortle,
+  nelm,
+  milkyWayLostYear,
+}: {
+  bortle: number;
+  nelm: number | null;
+  milkyWayLostYear: number | null;
+}) {
+  // Per Bortle (2001), the Milky Way is at least faintly visible up through
+  // Class 5 ("weak / washed-out overhead"). Class 6+ effectively erases it.
+  // The dataset's milky_way_lost_year is the year the site crossed the strict
+  // SQM 21.0 threshold during the VIIRS record — useful only when present-day
+  // Bortle is already ≥ 6.
+  const milkyWayVisible = bortle <= 5;
+  const milkyWayLabel = milkyWayVisible
+    ? bortle === 1
+      ? 'casts visible shadows'
+      : bortle === 2
+        ? 'richly detailed'
+        : bortle <= 4
+          ? 'visible at zenith'
+          : 'faintly visible at zenith'
+    : milkyWayLostYear
+      ? `lost ${milkyWayLostYear}`
+      : 'not visible';
+
+  return (
+    <div>
+      <div className="mb-3 font-mono text-[9px] uppercase tracking-[0.32em] text-muted">
+        sky overhead
+      </div>
+      <div className="space-y-2.5">
+        <SkyRow
+          label="bortle class"
+          value={`${bortle} · ${BORTLE_LABELS[bortle] ?? ''}`}
+          accent={bortle <= 4 ? 'glow' : null}
+        />
+        {nelm != null && (
+          <SkyRow label="naked-eye limit" value={`mag ${nelm.toFixed(1)}`} />
+        )}
+        <SkyRow label="milky way" value={milkyWayLabel} accent={milkyWayVisible ? 'glow' : null} />
+      </div>
+    </div>
+  );
+}
+
+function SkyRow({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: string;
+  accent?: 'glow' | null;
+}) {
+  const valueClass = accent === 'glow' ? 'text-glow/85' : 'text-ink/85';
+  return (
+    <div className="flex items-baseline justify-between border-b border-white/[0.04] pb-2.5">
+      <span className="font-body text-[13px] text-ink/65">{label}</span>
+      <span className={`font-mono text-[13px] tabular-nums ${valueClass}`}>{value}</span>
+    </div>
+  );
+}
+
+function YouCanSee({ visibility }: { visibility: Visibility }) {
+  return (
+    <div>
+      <div className="mb-3 font-mono text-[9px] uppercase tracking-[0.32em] text-muted">
+        you can see
+      </div>
+      <div className="border-b border-white/[0.04] pb-3">
+        <div className="font-display text-[18px] tabular-nums text-ink/95">
+          ~{visibility.stars_visible_estimate} stars
+        </div>
+        <ul className="mt-3 space-y-1.5">
+          {visibility.notable_objects.map((obj) => (
+            <li
+              key={obj}
+              className="flex items-baseline gap-2.5 font-body text-[13px] leading-relaxed text-ink/80"
+            >
+              <span className="mt-[6px] inline-block h-[1px] w-2 shrink-0 bg-glow/60" />
+              <span>{obj}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }

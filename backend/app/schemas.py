@@ -22,6 +22,25 @@ class GlobeAction(BaseModel):
     payload: dict[str, Any] = Field(default_factory=dict)
 
 
+class DarkSkyPlace(BaseModel):
+    name: str
+    country: str | None = None
+    # park / reserve / sanctuary / community / observatory
+    type: str
+    lat: float
+    lon: float
+    distance_km: float
+
+
+class SkyVisibility(BaseModel):
+    """What a naked-eye observer can typically see from this site on a clear night.
+    Derived from Bortle class — these are the standard amateur-astronomy
+    expectations per Bortle (2001), not measured per-site."""
+    stars_visible_estimate: str  # e.g. "~7,000+" or "~30"
+    milky_way: str               # short description of MW visibility
+    notable_objects: list[str]   # named DSOs / phenomena visible naked-eye
+
+
 class PlaceResult(BaseModel):
     name: str
     country: str | None = None
@@ -31,6 +50,18 @@ class PlaceResult(BaseModel):
     trend_pct_per_yr: float
     forecast_2035_pct_vs_2012: float | None = None
     sqm_current: float | None = None
+    # Bortle class 1-9 (Bortle 2001 scale). 1 = excellent dark; 9 = inner-city.
+    # Derived from sqm_current at serve time; null if SQM is unknown.
+    bortle_class: int | None = None
+    # Approximate naked-eye limiting magnitude (faintest star visible at zenith).
+    # Interpolated from a Crumey/Schaefer reference table; null if SQM unknown.
+    naked_eye_limit_mag: float | None = None
+    # Nearest curated dark-sky destination — for "where to escape to" framing
+    # in the Inspector. Null if no site within ~3000 km (i.e. ocean / Antarctica).
+    nearest_dark_sky: DarkSkyPlace | None = None
+    # Typical naked-eye visibility for this site's Bortle class. Null if
+    # Bortle is unknown.
+    visibility: SkyVisibility | None = None
     milky_way_lost_year: int | None = None
     milky_way_regained_year: int | None = None
     brightness_doubled_year: int | None = None

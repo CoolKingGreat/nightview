@@ -18,8 +18,10 @@ from pathlib import Path
 from typing import Literal
 
 from .schemas import (
+    DarkSkyPlace,
     Granularity,
     PlaceResult,
+    SkyVisibility,
     TimeSeriesPoint,
     TimeSeriesResult,
 )
@@ -194,6 +196,225 @@ def _haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     return 2 * r * math.asin(math.sqrt(a))
 
 
+# Bortle class boundaries (zenith SQM in mag/arcsec^2). Standard Bortle (2001)
+# thresholds — class number rises as the sky gets brighter.
+_BORTLE_THRESHOLDS = [
+    (21.99, 1),  # excellent dark — Milky Way casts visible shadows
+    (21.89, 2),  # typical truly-dark
+    (21.69, 3),  # rural
+    (20.49, 4),  # rural / suburban transition
+    (19.50, 5),  # suburban
+    (18.94, 6),  # bright suburban
+    (18.38, 7),  # suburban / urban
+    (17.80, 8),  # city
+]
+# Anything below 17.80 → class 9 (inner-city).
+
+
+def _sqm_to_bortle(sqm: float) -> int:
+    for cutoff, cls in _BORTLE_THRESHOLDS:
+        if sqm >= cutoff:
+            return cls
+    return 9
+
+
+# Reference points for zenith SQM → naked-eye limiting magnitude. Drawn from
+# Crumey (2014) "Human contrast threshold and astronomical visibility" and the
+# Bortle (2001) NELM column. Linear interpolation between adjacent rows.
+_NELM_TABLE = [
+    (22.00, 7.6),
+    (21.50, 6.8),
+    (21.00, 6.3),
+    (20.50, 5.9),
+    (20.00, 5.5),
+    (19.50, 5.2),
+    (19.00, 4.8),
+    (18.50, 4.4),
+    (18.00, 4.0),
+    (17.50, 3.6),
+    (17.00, 3.2),
+    (16.00, 2.5),
+]
+
+
+def _sqm_to_nelm(sqm: float) -> float:
+    if sqm >= _NELM_TABLE[0][0]:
+        return _NELM_TABLE[0][1]
+    if sqm <= _NELM_TABLE[-1][0]:
+        return _NELM_TABLE[-1][1]
+    for (s_hi, n_hi), (s_lo, n_lo) in zip(_NELM_TABLE, _NELM_TABLE[1:]):
+        if s_lo <= sqm <= s_hi:
+            t = (sqm - s_lo) / (s_hi - s_lo)
+            return n_lo + t * (n_hi - n_lo)
+    return 5.0  # unreachable; satisfies type checker
+
+
+# Curated list of well-known dark-sky destinations (parks, reserves,
+# sanctuaries, observatories). Used by nearest_dark_sky_park() to surface
+# a "where to escape to" suggestion in the Inspector.
+_DARK_SKY_SITES: list[dict] = []
+DARK_SKY_CSV = REPO_ROOT / "data" / "raw" / "dark_sky_places.csv"
+
+# Don't suggest a site that's farther than this — a 6000 km drive is not a
+# meaningful escape. Returns None instead.
+DARK_SKY_MAX_DISTANCE_KM = 3000.0
+
+
+def _load_dark_sky_sites() -> None:
+    global _DARK_SKY_SITES
+    if not DARK_SKY_CSV.exists():
+        return
+    import csv
+    sites: list[dict] = []
+    with DARK_SKY_CSV.open() as f:
+        for row in csv.DictReader(f):
+            try:
+                sites.append({
+                    "name": row["name"],
+                    "country": row.get("country") or None,
+                    "type": row["type"],
+                    "lat": float(row["lat"]),
+                    "lon": float(row["lon"]),
+                })
+            except (KeyError, ValueError):
+                continue
+    _DARK_SKY_SITES = sites
+
+
+_load_dark_sky_sites()
+
+
+# Standard amateur-astronomy expectations per Bortle class (Bortle 2001).
+# Star counts are order-of-magnitude estimates of naked-eye stars visible
+# under typical conditions at that class. Notable objects are commonly cited
+# in Bortle's original article and amateur references.
+_VISIBILITY_BY_BORTLE: dict[int, dict] = {
+    1: {
+        "stars_visible_estimate": "7,000+",
+        "milky_way": "casts visible shadows",
+        "notable_objects": [
+            "M31 Andromeda Galaxy",
+            "M33 Triangulum Galaxy",
+            "M42 Orion Nebula",
+            "M45 Pleiades",
+            "zodiacal light",
+            "gegenschein",
+            "airglow",
+        ],
+    },
+    2: {
+        "stars_visible_estimate": "5,000–7,000",
+        "milky_way": "richly structured overhead",
+        "notable_objects": [
+            "M31 Andromeda Galaxy",
+            "M33 Triangulum (with effort)",
+            "M42 Orion Nebula",
+            "M45 Pleiades",
+            "zodiacal light",
+        ],
+    },
+    3: {
+        "stars_visible_estimate": "3,000–5,000",
+        "milky_way": "detailed except near horizon",
+        "notable_objects": [
+            "M31 Andromeda",
+            "M42 Orion Nebula",
+            "M45 Pleiades",
+            "zodiacal light (spring/autumn)",
+        ],
+    },
+    4: {
+        "stars_visible_estimate": "2,000–3,000",
+        "milky_way": "visible at zenith; washed-out near horizon",
+        "notable_objects": [
+            "M31 Andromeda (obvious)",
+            "M42 Orion Nebula",
+            "M45 Pleiades",
+            "faint zodiacal light",
+        ],
+    },
+    5: {
+        "stars_visible_estimate": "1,500",
+        "milky_way": "weak and washed-out overhead",
+        "notable_objects": [
+            "M31 Andromeda (with averted vision)",
+            "M42 Orion Nebula",
+            "M45 Pleiades",
+            "bright planets",
+        ],
+    },
+    6: {
+        "stars_visible_estimate": "800",
+        "milky_way": "barely visible near zenith on the clearest nights",
+        "notable_objects": [
+            "M31 (barely, only when high overhead)",
+            "M45 Pleiades",
+            "M42 Orion Nebula (faintly)",
+            "bright planets",
+        ],
+    },
+    7: {
+        "stars_visible_estimate": "400–700",
+        "milky_way": "not visible",
+        "notable_objects": [
+            "M45 Pleiades",
+            "the brightest stars and major constellations",
+            "planets",
+        ],
+    },
+    8: {
+        "stars_visible_estimate": "200–400",
+        "milky_way": "not visible",
+        "notable_objects": [
+            "Orion, the Big Dipper, Cassiopeia",
+            "the brightest stars (Sirius, Vega, Arcturus, Betelgeuse)",
+            "planets",
+            "Moon",
+        ],
+    },
+    9: {
+        "stars_visible_estimate": "50–150",
+        "milky_way": "not visible",
+        "notable_objects": [
+            "the brightest dozen or so stars (Sirius, Vega, Arcturus)",
+            "the brightest planets",
+            "Moon",
+        ],
+    },
+}
+
+
+def visibility_for_bortle(bortle: int) -> SkyVisibility:
+    data = _VISIBILITY_BY_BORTLE.get(bortle) or _VISIBILITY_BY_BORTLE[9]
+    return SkyVisibility(
+        stars_visible_estimate=data["stars_visible_estimate"],
+        milky_way=data["milky_way"],
+        notable_objects=data["notable_objects"],
+    )
+
+
+def nearest_dark_sky_park(lat: float, lon: float) -> DarkSkyPlace | None:
+    if not _DARK_SKY_SITES:
+        return None
+    best = None
+    best_d = float("inf")
+    for site in _DARK_SKY_SITES:
+        d = _haversine_km(lat, lon, site["lat"], site["lon"])
+        if d < best_d:
+            best_d = d
+            best = site
+    if best is None or best_d > DARK_SKY_MAX_DISTANCE_KM:
+        return None
+    return DarkSkyPlace(
+        name=best["name"],
+        country=best["country"],
+        type=best["type"],
+        lat=best["lat"],
+        lon=best["lon"],
+        distance_km=round(best_d, 0),
+    )
+
+
 # ---------------------------------------------------------------------------
 # Real-data layer (Parquet → pandas)
 # ---------------------------------------------------------------------------
@@ -217,14 +438,22 @@ _load_real()
 
 def _row_to_place(row) -> PlaceResult:
     sqm = row.get("sqm_current") if hasattr(row, "get") else row["sqm_current"]
+    sqm_f = float(sqm) if sqm is not None else None
+    lat = float(row["lat"])
+    lon = float(row["lon"])
+    bortle = _sqm_to_bortle(sqm_f) if sqm_f is not None else None
     return PlaceResult(
         name=str(row["name"]),
         country=str(row["country"]) if row["country"] else None,
-        lat=float(row["lat"]),
-        lon=float(row["lon"]),
+        lat=lat,
+        lon=lon,
         trend_pct_per_yr=float(row["trend_pct_per_yr"]),
         forecast_2035_pct_vs_2012=float(row["forecast_2035_pct_vs_2012"]),
-        sqm_current=float(sqm) if sqm is not None else None,
+        sqm_current=sqm_f,
+        bortle_class=bortle,
+        naked_eye_limit_mag=round(_sqm_to_nelm(sqm_f), 1) if sqm_f is not None else None,
+        nearest_dark_sky=nearest_dark_sky_park(lat, lon),
+        visibility=visibility_for_bortle(bortle) if bortle is not None else None,
         milky_way_lost_year=_int_or_none(row.get("milky_way_lost_year")),
         milky_way_regained_year=_int_or_none(row.get("milky_way_regained_year")),
         brightness_doubled_year=_int_or_none(row.get("brightness_doubled_year")),

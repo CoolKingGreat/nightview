@@ -37,6 +37,7 @@ build/
 # ignore raw VIIRS dumps and per-pixel intermediates
 data/raw/*
 !data/raw/cities_seed.csv
+!data/raw/dark_sky_places.csv
 data/processed/*
 !data/processed/trends.parquet
 !data/processed/.gitkeep
