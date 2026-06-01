@@ -26,8 +26,9 @@ Resume.pdf
 .env.*
 !.env.example
 
-# only ship the curated CSV + the prebuilt parquet — Dockerfile copies them explicitly
+# only ship the curated CSVs + the prebuilt parquet — Dockerfile copies them explicitly
 data/raw/*
 !data/raw/cities_seed.csv
+!data/raw/dark_sky_places.csv
 data/processed/*
 !data/processed/trends.parquet
