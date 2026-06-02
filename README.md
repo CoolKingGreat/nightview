@@ -1,35 +1,36 @@
 # Nightview
 
-> An interactive 3D globe of how the night sky has changed across Earth since 2012 — with a conversational AI agent built on Claude that drives the camera and surfaces patterns in real VIIRS satellite data.
+> An interactive 3D globe of how the night sky has changed across Earth since 2012, with a conversational AI agent that drives the camera and surfaces patterns in real NASA VIIRS satellite measurements.
 
 ![Nightview Globe Screenshot](screenshot.png)
 
-[Live demo](#) · [Case study](#) · [Methodology](#methodology)
+**[Live demo](https://nightview.aryanvalsa.me)** · [Methodology](#methodology) · [Source](https://github.com/CoolKingGreat/nightview)
 
 ---
 
 ## What it does
 
-- **A globe permanently painted with data.** ~2,900 cities across every populated continent, colored by their rate of light-pollution change since 2012 (blue → cream → red). Population sizes the dots; trend colors them. Riyadh and Mumbai light up immediately as the worst offenders; Cherry Springs and the Atacama stay dark.
-- **A time scrubber pinned to the bottom.** Drag it between 2012 and 2035 and the dots morph in real time — brightening cities visibly grow, darkening cities shrink. Play button auto-animates the 23-year arc.
-- **A conversational agent.** Powered by Claude Haiku 4.5 (with prompt caching and an automatic Sonnet 4.6 escalation for hard queries). Ask things like *"where is the night sky disappearing fastest?"*, *"compare India vs China"*, or *"how bright will St. Louis be in 2035?"* — the relevant cities pulse in their existing heatmap color (not generic markers), the camera glides to frame them, and the agent narrates in plain English with the actual numbers cited.
-- **Click any city** for an inspector with the brightness time series, Prophet-style forecast to 2035, current SQM (Sky Quality Magnitude), and milestone badges (e.g. *"brightness doubled · 2030"*). If the scrubber is at year Y, the inspector projects SQM for Y, not for the present.
-- **Search any city** from the top-right autocomplete (Paris, Pathein, St. Louis, Atacama, anywhere).
+- **A globe painted with real measurements.** 2,933 cities and dark-sky destinations, every one of them backed by per-pixel NASA VIIRS Day/Night Band radiance pulled from Google Earth Engine. Trend rate colors the dots (blue → cream → red, darkening through brightening), population sizes them. NASA's Black Marble nighttime imagery is the basemap, so continental geography reads naturally underneath.
+- **A time scrubber across the bottom.** Drag between 2012 and 2035; the dots morph in real time as each city's measured trend extrapolates forward. Play button auto-animates the 23-year arc.
+- **A conversational agent.** Claude Haiku 4.5 (with prompt caching for ~95% cache-hit rate after the first turn), escalating to Sonnet 4.6 on comparative queries. Ask *"where is the night sky disappearing fastest?"*, *"compare India vs China"*, *"what can I see from Houston tonight?"*, *"is the Milky Way visible from Cherry Springs?"* — the relevant cities pulse in their existing heatmap colors, the camera glides to frame them, and the agent narrates in warm prose with the actual numbers cited.
+- **Click any city or dark-sky park** for an Inspector with the measured monthly brightness time series, the Prophet forecast through 2035, current Bortle class, naked-eye limiting magnitude, what's actually visible at that sky quality (Milky Way state, named DSOs, approximate star count), tracked milestones (*"brightness doubled · 2017"*), and the nearest dark-sky escape (with km distance).
+- **Search any place** from the top-right autocomplete. The 51 IDA-certified dark-sky parks are all in the dataset, clickable, and rendered as proper measured rows.
 
 ## Architecture
 
 ```
                   ┌──────────────────────────────────────┐
                   │   React + Vite + CesiumJS frontend   │
-                  │   (full-bleed globe + chat orb +     │
-                  │    inspector + time ribbon + search) │
+                  │   Black Marble basemap +             │
+                  │   chat orb + inspector + scrubber    │
+                  │   + city search + methodology modal  │
                   └─────────────┬────────────────────────┘
                                 │  HTTP / SSE
                   ┌─────────────▼────────────────────────┐
                   │           FastAPI backend            │
                   │  ┌──────────────────────────────┐    │
                   │  │  Claude agent loop           │    │
-                  │  │  Haiku 4.5 (cached)          │    │
+                  │  │  Haiku 4.5 (prompt-cached)   │    │
                   │  │  → Sonnet 4.6 on complex     │    │
                   │  └──────────────┬───────────────┘    │
                   │                 │                    │
@@ -44,23 +45,25 @@
                   │  └──────────────┬───────────────┘    │
                   │                 │                    │
                   │  ┌──────────────▼───────────────┐    │
-                  │  │  Rate limit + $ daily cap    │    │
+                  │  │  Rate limit + daily $ cap    │    │
                   │  └──────────────────────────────┘    │
                   └─────────────────┬────────────────────┘
                                     │
                   ┌─────────────────▼────────────────────┐
                   │       Parquet trends store           │
-                  │  (per-city: baseline radiance,       │
-                  │   trend %/yr, SQM, 156-month         │
-                  │   history, 120-month forecast,       │
-                  │   milestone years)                   │
+                  │  per-city: measured radiance + SQM,  │
+                  │  trend %/yr, Bortle, NELM, visibility│
+                  │  notes, 156-month history,           │
+                  │  120-month Prophet forecast,         │
+                  │  milestone years, nearest dark sky   │
                   └─────────────────┬────────────────────┘
                                     │   offline ingestion
                   ┌─────────────────▼────────────────────┐
                   │   scripts/                           │
-                  │  · ingest_seed.py    curated 107     │
-                  │  · ingest_global.py  geonames 2,894  │
-                  │  · ingest_gee.py     real GEE pixels │
+                  │  · ingest_seed.py     curated seed   │
+                  │  · ingest_global.py   geonames bulk  │
+                  │  · ingest_gee.py      real GEE pixels│
+                  │                       (the live one) │
                   └──────────────────────────────────────┘
 ```
 
@@ -68,55 +71,79 @@
 
 ```bash
 make install        # one-time: backend venv + npm install
-make dev            # starts both servers in the background
+make dev            # starts backend on :8000 and frontend on :5173
 # open http://localhost:5173
 ```
 
 You'll need:
+
 - Python 3.11+
 - Node 20+
 - An [Anthropic API key](https://console.anthropic.com) in `.env` at the repo root:
   ```
   ANTHROPIC_API_KEY=sk-ant-...
   ```
-- Optional: a [Cesium Ion token](https://ion.cesium.com/tokens) for NASA Black Marble imagery as the basemap (free):
+- A [Cesium Ion token](https://ion.cesium.com/tokens) for the NASA Black Marble basemap (free tier covers it). Add to `.env`:
   ```
   VITE_CESIUM_ION_TOKEN=eyJhbGciOi...
   ```
-  Then flip `USE_BLACK_MARBLE_BASEMAP = true` in `frontend/src/components/Globe.tsx`. Without it, the globe uses Cesium's bundled Natural Earth II imagery, darkened to fit the night theme.
+  The Black Marble basemap is on by default in `frontend/src/components/Globe.tsx` (`USE_BLACK_MARBLE_BASEMAP = true`). Without a token, the globe falls back to Cesium's bundled Natural Earth II imagery.
+
+To regenerate the dataset yourself (requires a free [Google Earth Engine](https://earthengine.google.com/signup/) account, ~2 hours of GEE compute for the full 2,933 cities):
+
+```bash
+earthengine authenticate
+GEE_PROJECT_ID=your-gcp-project make seed-global
+backend/.venv/bin/python scripts/ingest_gee.py --project your-gcp-project
+```
 
 Other targets:
 
 ```bash
 make help           # list available targets
 make stop           # kill backend + frontend
-make seed           # regenerate the curated-seed Parquet (~107 cities)
-make seed-global    # regenerate via geonamescache (~2,894 cities, default)
+make seed           # regenerate from curated seed only (~150 cities)
+make seed-global    # regenerate via geonamescache + seed overlay
 make typecheck      # tsc + py_compile across both halves
 ```
 
 ## Stack
 
-| Layer | Choice |
-|---|---|
-| Globe | CesiumJS (`Cesium.PointPrimitiveCollection` for GPU-direct heatmap, entity overlays for highlights) |
-| UI | React 18 + Vite + TypeScript + TailwindCSS + Motion (`motion/react`) |
-| Backend | FastAPI + Anthropic Python SDK (streaming tool-use with prompt caching) |
-| LLM | Claude **Haiku 4.5** default, escalates to **Sonnet 4.6** on complex queries |
-| Data | NASA VIIRS DNB derived; trends sourced from Kyba et al. 2017 / Sánchez de Miguel et al. 2021 |
-| Storage | Parquet, queried via pandas (single file, ~10 MB) |
-| Forecast | Per-city compound-growth projection (Prophet path available in `ingest_gee.py`) |
-| Deploy | Vercel (frontend) + Fly.io (backend) — see [DEPLOY.md](DEPLOY.md) |
+| Layer       | Choice                                                                                                          |
+| ----------- | --------------------------------------------------------------------------------------------------------------- |
+| Globe       | CesiumJS with NASA Black Marble basemap via Cesium Ion; `PointPrimitiveCollection` for GPU-direct dot rendering |
+| UI          | React 18 + Vite + TypeScript + TailwindCSS + Motion (`motion/react`)                                            |
+| Backend     | FastAPI + Anthropic Python SDK (streaming tool-use, prompt caching)                                             |
+| LLM         | Claude **Haiku 4.5** default, escalates to **Sonnet 4.6** on comparative queries                                |
+| Data source | NASA VIIRS Day/Night Band (VNP46A2), pulled per-pixel via Google Earth Engine                                   |
+| Storage     | Parquet, queried via pandas (single file, ~7 MB)                                                                |
+| Forecast    | Per-city Prophet with yearly seasonality, linear growth, 120-month horizon                                      |
+| Frontend    | Vercel                                                                                                          |
+| Backend     | Oracle Cloud Always-Free (A1 Flex ARM), Docker + systemd + Caddy + Let's Encrypt                                |
+
+Monthly cost: $0. Domain renewal is the only ongoing fee.
 
 ## Methodology
 
-**Trend rates** come from published VIIRS Day-Night Band analyses — Kyba et al. (2017) for global / regional rates, Sánchez de Miguel et al. (2021) for country-level updates, plus city-specific studies for ~107 hand-curated cities (the worst offenders and the famous dark-sky reserves). Cities not in the curated set get their country's published rate.
+For the in-depth version, click the **methodology** link in the bottom-right of the live site. The short version:
 
-**Baseline radiance** for the ~2,800 geonames cities is modeled from population — a log-linear curve fit against the curated set. This is the modeled part: real per-pixel measurements require running `scripts/ingest_gee.py`, which pulls actual `NOAA/VIIRS/DNB/MONTHLY_V1` time series from Google Earth Engine for every city in the list (requires a free GEE account, ~10 min to process).
+**Source.** Every city's radiance comes from NASA's VIIRS DNB monthly composite (VNP46A2 Black Marble), sampled as the median radiance over a 10 km buffer around the centroid, filtered to good-quality pixels (cloud-and-lunar-and-snow-masked) via the product's own `Mandatory_Quality_Flag`. Aggregation runs server-side on Google Earth Engine in one call per city. The record runs April 2012 through April 2025 (~156 months).
 
-**SQM (Sky Quality Magnitude)** is derived from radiance using the Falchi et al. (2016) conversion, with natural night-sky radiance pinned at 0.171 nW/cm²/sr. The Milky Way visibility threshold is SQM 21.0 (Bortle 4) — though the dataset's darkest reserves cap around SQM 20.3, the `dark_sky_locations` tool uses 19.5 as the practical floor.
+**SQM (sky brightness in mag/arcsec²)** is derived from radiance using the Falchi et al. (2016) calibration:
+```
+SQM = 22.0 − 2.5 · log₁₀(radiance / 0.171 + 1)
+```
+where 22.0 is the pristine-sky reference and 0.171 nW/cm²/sr is the natural-night baseline (airglow + zodiacal).
 
-**Forecasts to 2035** apply each city's trend as compound monthly growth from its present radiance.
+**Bortle class (1-9)** uses John Bortle's original 2001 thresholds. Class 1 is pristine dark-sky (SQM ≥ 21.99); Class 9 is inner-city (SQM < 17.80).
+
+**Naked-eye limiting magnitude** interpolates between Crumey (2014) reference points.
+
+**"What you can see"** maps Bortle class to typical naked-eye star counts and named visible objects (Milky Way state, M31, M42, M45, zodiacal light) per Bortle's original article and amateur-astronomy convention.
+
+**Forecasts** run 120 months ahead via Prophet with yearly seasonality and linear growth.
+
+**Honest limits.** The 10 km buffer averages in a lot of water for coastal cities (San Francisco, Hong Kong, Sydney all read artificially low). VIIRS has a noise floor near the dark end, so even the most pristine sites cap around SQM 21.9. Forecasts assume the past 13 years of trend continue; cities mid-LED-conversion (Chicago is the canonical case) may flatten or reverse in ways Prophet can't anticipate.
 
 ## Project layout
 
@@ -127,30 +154,35 @@ make typecheck      # tsc + py_compile across both halves
 │   │   ├── main.py         endpoints (/api/chat, /api/cities, /api/point, /api/top_changers, /api/health)
 │   │   ├── agent.py        Claude tool-use loop, model routing, error handling
 │   │   ├── tools.py        6 tool JSON schemas + async dispatcher
-│   │   ├── data.py         Parquet → pandas, query helpers
-│   │   ├── schemas.py      Pydantic models
+│   │   ├── data.py         Parquet → pandas, SQM/Bortle/NELM helpers, dark-sky lookup
+│   │   ├── schemas.py      Pydantic models (PlaceResult, TimeSeriesResult, SkyVisibility, DarkSkyPlace, …)
 │   │   └── rate_limit.py   per-IP + daily $ cap
 │   └── requirements.txt
 ├── frontend/               React + Vite + Cesium
 │   └── src/
-│       ├── components/     Globe · ChatOrb · Inspector · CitySearch · HoverTooltip · TimeRibbon · ObservatoryHud · ErrorBoundary
+│       ├── components/     Globe · ChatOrb · Inspector · CitySearch · HoverTooltip · TimeRibbon · ObservatoryHud · Methodology · Welcome · ErrorBoundary
 │       ├── lib/            api, types, prompts
 │       ├── App.tsx · main.tsx · index.css
 │       └── ...
 ├── scripts/                ingestion pipelines (seed, global, gee)
 ├── data/
-│   ├── raw/                cities_seed.csv (107 curated cities)
-│   └── processed/          trends.parquet (gitignored, generated)
-├── Makefile
+│   ├── raw/                cities_seed.csv (curated cities + 51 IDA dark-sky places) · dark_sky_places.csv
+│   └── processed/          trends.parquet (~7 MB, generated by ingest_gee.py)
+├── Dockerfile              backend image (Caddy + systemd-managed on Oracle)
+├── Makefile                make install / dev / stop / seed / seed-global / typecheck
 └── README.md
 ```
 
 ## Credits
 
-- NASA Earth Observatory — VIIRS Day-Night Band imagery and the Black Marble product family
-- Christopher C. M. Kyba et al. (2017) — *Artificially lit surface of Earth at night increasing in radiance and extent*
-- Alejandro Sánchez de Miguel et al. — VIIRS-derived long-term sky brightness trends
-- Fabio Falchi et al. (2016) — *World Atlas of Artificial Night Sky Brightness* (the VIIRS → SQM conversion)
-- [geonamescache](https://github.com/yaph/geonamescache) — bundled global cities database
-- Cesium / Cesium Ion — globe rendering + Natural Earth II base imagery
-- Anthropic — Claude API
+- **NASA Earth Observatory** — VIIRS Day/Night Band imagery and the Black Marble (VNP46A2) product family
+- **Google Earth Engine** — the public catalog and compute that makes per-pixel sampling at this scale free for noncommercial use
+- **Christopher C. M. Kyba** et al. (2017) — *Artificially lit surface of Earth at night increasing in radiance and extent*
+- **Alejandro Sánchez de Miguel** et al. (2021) — global trends in nocturnal power emissions
+- **Fabio Falchi** et al. (2016) — *World Atlas of Artificial Night Sky Brightness* (the VIIRS → SQM calibration)
+- **John Bortle** (2001) — *Introducing the Bortle Dark-Sky Scale* in Sky & Telescope
+- **Andrew Crumey** (2014) — naked-eye limiting magnitude reference table
+- **International Dark-Sky Association** — the certified dark-sky places list
+- [**geonamescache**](https://github.com/yaph/geonamescache) — bundled global cities database used to seed the long tail
+- **Cesium / Cesium Ion** — globe rendering + Black Marble basemap hosting
+- **Anthropic** — Claude API
